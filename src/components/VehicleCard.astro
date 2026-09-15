@@ -1,0 +1,41 @@
+---
+const { vehicle } = Astro.props;
+---
+
+<div 
+  data-category={vehicle.category} 
+  data-brand={vehicle.brand}
+  data-name={vehicle.name.toLowerCase()}
+  class="vehicle-card bg-white rounded-2xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+>
+  <div>
+    <div class="relative h-44 rounded-xl overflow-hidden mb-4 bg-slate-100">
+      <img src={vehicle.image} alt={vehicle.name} class="w-full h-full object-cover" />
+      <span class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md text-white text-xs font-medium px-3 py-1 rounded-full">
+        {vehicle.category}
+      </span>
+    </div>
+
+    <h3 class="text-base font-bold text-slate-900 mb-1 line-clamp-1">{vehicle.name}</h3>
+    <p class="text-xs text-slate-500 mb-3">{vehicle.brand}</p>
+  </div>
+
+  <div>
+    <div class="flex justify-between items-center mb-4">
+      <span class="text-xl font-extrabold text-indigo-600">{vehicle.price.toLocaleString('es-ES')} €</span>
+      <span class="text-xs font-semibold px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-600">
+        Stock: {vehicle.stock}
+      </span>
+    </div>
+
+    <button 
+      type="button"
+      data-id={vehicle.id}
+      data-name={vehicle.name}
+      data-price={vehicle.price}
+      class="add-to-cart-btn w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2.5 px-4 rounded-xl transition-colors flex items-center justify-center gap-2"
+    >
+      <span>🛒</span> Añadir
+    </button>
+  </div>
+</div>
