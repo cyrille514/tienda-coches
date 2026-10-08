@@ -1,0 +1,61 @@
+---
+// src/components/MenuCategorias.astro
+import '../styles/global.css';
+import { supabase } from '../lib/supabase';
+
+const { data: categoriasData } = await supabase
+  .from('categorias')
+  .select('*')
+  .order('pk_categoria', { ascending: true });
+
+const categorias = (categoriasData && categoriasData.length > 0) 
+  ? categoriasData 
+  : [
+      { pk_categoria: 1, nom_categoria: 'Volvo', descripcion_categoria: 'Gama de vehículos Volvo de última generación' },
+      { pk_categoria: 2, nom_categoria: 'BMW', descripcion_categoria: 'Vehículos BMW de alto rendimiento' },
+      { pk_categoria: 3, nom_categoria: 'Toyota', descripcion_categoria: 'Coches Toyota fiables e híbridos' },
+      { pk_categoria: 4, nom_categoria: 'Mercedes', descripcion_categoria: 'Modelos Mercedes-Benz de máximo lujo' },
+      { pk_categoria: 5, nom_categoria: 'Peugeot', descripcion_categoria: 'Diseño innovador y tecnología Peugeot' }
+    ];
+
+const { categoriaActivaId } = Astro.props;
+const activaId = Number(categoriaActivaId);
+---
+
+<nav class="space-y-2">
+  <div class="flex items-center justify-between px-3 mb-3">
+    <h3 class="text-xs font-bold uppercase tracking-wider text-violet-600">Marcas & Categorías</h3>
+  </div>
+
+  <ul class="space-y-1.5">
+    {categorias.map((cat) => {
+      const idCat = cat.pk_categoria || cat.id;
+      const nombreCat = cat.nom_categoria || cat.nombre;
+      const esActivo = idCat === activaId;
+      
+      return (
+        <li>
+          <a 
+            href={`/productos?categoria=${idCat}`}
+            title={cat.descripcion_categoria || nombreCat}
+            class={`flex items-center justify-between px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 group ${
+              esActivo 
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 font-semibold' 
+                : 'text-slate-300 hover:bg-slate-800/80 hover:text-white border border-transparent hover:border-slate-700/50'
+            }`}
+          >
+            <span>{nombreCat}</span>
+            <svg 
+              class={`w-4 h-4 transition-transform duration-200 ${esActivo ? 'translate-x-1 text-white' : 'text-slate-500 group-hover:translate-x-1 group-hover:text-slate-300'}`} 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </a>
+        </li>
+      );
+    })}
+  </ul>
+</nav>

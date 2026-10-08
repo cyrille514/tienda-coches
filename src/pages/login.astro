@@ -1,0 +1,285 @@
+---
+// src/pages/login.astro
+import LayoutBase from "../layouts/LayoutBase.astro";
+---
+
+<LayoutBase title="Iniciar sesión - Tienda de Coches">
+  
+  <!-- BOUTON VOLVER -->
+  <div class="mb-4">
+    <button 
+      onclick="window.history.back()" 
+      class="inline-flex items-center gap-2 px-3 py-1.5 bg-white text-gray-700 hover:bg-gray-100 border border-gray-300 rounded-md text-sm font-semibold transition-colors cursor-pointer shadow-sm"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+      Volver
+    </button>
+  </div>
+
+  <!-- MODAL / CONTENEUR DE LOGIN ET REGISTRE -->
+  <div class="max-w-4xl mx-auto bg-white text-gray-800 rounded-xl shadow-2xl overflow-hidden border border-gray-200 relative">
+    
+    <!-- BOUTON FERMER (X) -->
+    <a href="/productos?categoria=1" class="absolute top-4 right-5 text-gray-400 hover:text-gray-700 font-bold text-2xl z-10">&times;</a>
+
+    <div class="grid grid-cols-1 md:grid-cols-2">
+      
+      <!-- COLONNE GAUCHE: INICIAR SESIÓN -->
+      <div class="p-8 flex flex-col justify-between space-y-6">
+        <div>
+          <!-- Logo Clé / Icône Sécurité -->
+          <div class="flex items-center justify-center mb-4">
+            <div class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-xl shadow-sm">
+              🔑
+            </div>
+          </div>
+
+          <h1 class="text-2xl font-bold text-center text-gray-900 mb-1">Iniciar sesión</h1>
+          <p class="text-xs text-center text-gray-500 mb-8">Utiliza tu cuenta de cliente registrado</p>
+
+          <form id="login-form" class="space-y-5">
+            <div>
+              <label for="login-email" class="block text-xs font-semibold text-blue-600 mb-1">Correo electrónico o teléfono</label>
+              <input 
+                type="email" 
+                id="login-email" 
+                required 
+                placeholder="carlos.gomez@gmail.com"
+                class="w-full px-3 py-2.5 border-2 border-blue-500 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 text-gray-900 bg-white"
+              />
+            </div>
+
+            <div>
+              <label for="login-password" class="block text-xs font-semibold text-gray-600 mb-1">Contraseña</label>
+              <input 
+                type="password" 
+                id="login-password" 
+                required 
+                placeholder="••••••••"
+                class="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+              />
+            </div>
+
+            <div class="flex items-center justify-between text-xs">
+              <a href="/cambiar-password" class="text-blue-600 font-semibold hover:underline">
+                ¿Quieres cambiar tu contraseña?
+              </a>
+            </div>
+
+            <div id="login-error" class="hidden text-xs text-red-600 bg-red-50 p-2 rounded border border-red-200"></div>
+
+            <div class="flex items-center justify-between pt-4">
+              <!-- BOUTON AFFICHER INSCRIPTION -->
+              <button 
+                type="button" 
+                id="btn-show-register"
+                class="text-xs font-bold text-blue-600 hover:underline cursor-pointer"
+              >
+                Crear cuenta
+              </button>
+
+              <button 
+                type="submit" 
+                class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2.5 rounded-md text-sm transition-colors cursor-pointer shadow-md"
+              >
+                Siguiente
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- COLONNE DROITE: FORMULARIO DE REGISTRO (MASQUÉE PAR DÉFAUT) -->
+      <div id="register-panel" class="hidden bg-[#82a3bc] p-8 text-white flex-col justify-center shadow-inner relative transition-all duration-300">
+        
+        <!-- Bouton pour cacher le panneau -->
+        <button 
+          type="button" 
+          id="btn-hide-register" 
+          class="absolute top-3 right-4 text-white/70 hover:text-white font-bold text-lg cursor-pointer"
+          title="Ocultar registro"
+        >
+          ✕
+        </button>
+
+        <h2 class="text-2xl font-bold mb-2 text-center">Formulario de registro</h2>
+        <p class="text-xs text-blue-100 text-center mb-6">Completa tus datos para crear una nueva cuenta de cliente.</p>
+
+        <form id="register-form" class="space-y-3">
+          <div>
+            <label class="block text-xs font-medium text-white mb-1">Nombre completo *</label>
+            <input 
+              type="text" 
+              id="reg-nombre" 
+              required 
+              placeholder="Ej. Juan Pérez"
+              class="w-full px-3 py-1.5 rounded border border-blue-200 text-gray-900 text-sm bg-white"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-white mb-1">Correo electrónico *</label>
+            <input 
+              type="email" 
+              id="reg-email" 
+              required 
+              placeholder="juan@gmail.com"
+              class="w-full px-3 py-1.5 rounded border border-blue-200 text-gray-900 text-sm bg-white"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-white mb-1">Teléfono</label>
+            <input 
+              type="tel" 
+              id="reg-telefono" 
+              placeholder="600123456"
+              class="w-full px-3 py-1.5 rounded border border-blue-200 text-gray-900 text-sm bg-white"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-white mb-1">Dirección</label>
+            <input 
+              type="text" 
+              id="reg-direccion" 
+              placeholder="Calle Balmes 114, Barcelona"
+              class="w-full px-3 py-1.5 rounded border border-blue-200 text-gray-900 text-sm bg-white"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-white mb-1">Contraseña *</label>
+            <input 
+              type="password" 
+              id="reg-password" 
+              required 
+              placeholder="AstroCoches2026!"
+              class="w-full px-3 py-1.5 rounded border border-blue-200 text-gray-900 text-sm bg-white"
+            />
+          </div>
+
+          <button 
+            type="submit" 
+            class="w-full bg-slate-900 hover:bg-black text-white font-bold py-2.5 rounded text-sm transition-colors mt-4 cursor-pointer shadow-md"
+          >
+            Registrar nuevo cliente
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</LayoutBase>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  const btnShowRegister = document.getElementById('btn-show-register');
+  const btnHideRegister = document.getElementById('btn-hide-register');
+  const registerPanel = document.getElementById('register-panel');
+
+  const loginForm = document.getElementById('login-form');
+  const registerForm = document.getElementById('register-form');
+  const loginError = document.getElementById('login-error');
+
+  // 1. AFFICHER LE PANNEAU D'INSCRIPTION
+  if (btnShowRegister && registerPanel) {
+    btnShowRegister.addEventListener('click', () => {
+      registerPanel.classList.remove('hidden');
+      registerPanel.classList.add('flex');
+    });
+  }
+
+  // 2. MASQUER LE PANNEAU D'INSCRIPTION
+  if (btnHideRegister && registerPanel) {
+    btnHideRegister.addEventListener('click', () => {
+      registerPanel.classList.add('hidden');
+      registerPanel.classList.remove('flex');
+    });
+  }
+
+  // 3. TRAITEMENT DE LA CONNEXION (INICIAR SESIÓN)
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (loginError) loginError.classList.add('hidden');
+
+      const emailInput = document.getElementById('login-email') as HTMLInputElement | null;
+      const passwordInput = document.getElementById('login-password') as HTMLInputElement | null;
+
+      if (!emailInput || !passwordInput) return;
+
+      const email = emailInput.value.trim();
+      const password = passwordInput.value.trim();
+
+      const { data: cliente, error } = await supabase
+        .from('clientes')
+        .select('*')
+        .eq('email', email)
+        .eq('password', password)
+        .maybeSingle();
+
+      if (error || !cliente) {
+        if (loginError) {
+          loginError.textContent = 'Correo electrónico o contraseña incorrectos.';
+          loginError.classList.remove('hidden');
+        }
+        return;
+      }
+
+      const nombreDisplay = cliente.nombre_cliente || cliente.nombre || 'Usuario';
+      localStorage.setItem('tienda_usuario', JSON.stringify({ ...cliente, nombre: nombreDisplay }));
+      window.location.href = '/productos?categoria=1';
+    });
+  }
+
+  // 4. TRAITEMENT DE L'INSCRIPTION (REGISTRAR NUEVO CLIENTE)
+  if (registerForm) {
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const nombreInput = document.getElementById('reg-nombre') as HTMLInputElement | null;
+      const emailInput = document.getElementById('reg-email') as HTMLInputElement | null;
+      const telefonoInput = document.getElementById('reg-telefono') as HTMLInputElement | null;
+      const direccionInput = document.getElementById('reg-direccion') as HTMLInputElement | null;
+      const passwordInput = document.getElementById('reg-password') as HTMLInputElement | null;
+
+      const nombreCompleto = nombreInput ? nombreInput.value.trim() : '';
+      const emailVal = emailInput ? emailInput.value.trim() : '';
+      const telefonoVal = telefonoInput ? telefonoInput.value.trim() : '';
+      const direccionVal = direccionInput ? direccionInput.value.trim() : '';
+      const passwordVal = (passwordInput && passwordInput.value.trim()) ? passwordInput.value.trim() : 'AstroCoches2026!';
+
+      const partesNombre = nombreCompleto.split(' ');
+      const nombrePropio = partesNombre[0] || 'Cliente';
+      const primerApellido = partesNombre.slice(1).join(' ') || 'Nuevo';
+
+      const nuevoCliente = {
+        nombre_cliente: nombrePropio,
+        apellido1_cliente: primerApellido,
+        email: emailVal,
+        telefono_movil: telefonoVal,
+        direccion: direccionVal,
+        password: passwordVal,
+        tipo: 'particular',
+        rol: 'cliente'
+      };
+
+      const { data, error } = await supabase
+        .from('clientes')
+        .insert([nuevoCliente])
+        .select()
+        .single();
+
+      if (error) {
+        alert(`Error al registrar usuario: ${error.message}`);
+        return;
+      }
+
+      localStorage.setItem('tienda_usuario', JSON.stringify({ ...data, nombre: nombrePropio }));
+      alert('¡Registro completado con éxito!');
+      window.location.href = '/productos?categoria=1';
+    });
+  }
+</script>

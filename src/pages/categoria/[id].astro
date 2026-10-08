@@ -1,0 +1,35 @@
+---
+import LayoutBase from "../../layouts/LayoutBase.astro";
+import VehicleCard from "../../components/VehicleCard.astro";
+import { getProductosByCategoria } from "../../lib/productos";
+import { getCategorias } from "../../lib/categorias";
+
+const { id } = Astro.params;
+const categoriaId = Number(id) || 1;
+
+// Obtenemos los productos y las categorías en paralelo
+const [productos, categorias] = await Promise.all([
+  getProductosByCategoria(categoriaId),
+  getCategorias()
+]);
+
+// 1. Buscamos la categoría usando la clave correcta 'pk_categoria'
+const categoriaActual = categorias?.find((c) => Number(c.pk_categoria) === categoriaId);
+
+// 2. Usamos 'nom_categoria' para obtener el nombre
+const nombreCategoria = categoriaActual ? categoriaActual.nom_categoria : `Categoría ${categoriaId}`;
+---
+
+<LayoutBase>
+  <h2 class="text-2xl font-bold text-slate-100 mb-6">{nombreCategoria}</h2>
+
+  {productos && productos.length > 0 ? (
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      {productos.map((producto) => (
+        <VehicleCard vehiculo={producto} />
+      ))}
+    </div>
+  ) : (
+    <p class="text-slate-400 italic">No hay vehículos disponibles en esta categoría.</p>
+  )}
+</LayoutBase>

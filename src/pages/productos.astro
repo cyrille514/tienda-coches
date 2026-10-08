@@ -1,0 +1,58 @@
+---
+// src/pages/productos.astro
+import LayoutBase from "../layouts/LayoutBase.astro";
+import VehicleCard from "../components/VehicleCard.astro";
+import { supabase } from "../lib/supabase";
+
+const categoriaParam = Astro.url.searchParams.get('categoria');
+const categoriaId = categoriaParam ? Number(categoriaParam) : 1;
+
+const { data: categoriaActual } = await supabase
+  .from('categorias')
+  .select('*')
+  .eq('pk_categoria', categoriaId)
+  .maybeSingle();
+
+const { data: productos } = await supabase
+  .from('productos')
+  .select('*')
+  .eq('fk_categoria', categoriaId);
+
+const nombreCategoria = categoriaActual?.nom_categoria || `Categoría ${categoriaId}`;
+---
+
+<LayoutBase title={`${nombreCategoria} - Tienda de Coches`} categoriaActivaId={categoriaId}>
+  
+  <!-- BOUTON VOLVER -->
+  <div class="mb-4">
+    <button 
+      onclick="window.history.back()" 
+      class="inline-flex items-center gap-2 px-3 py-1.5 bg-white text-blue-700 hover:bg-gray-100 border border-gray-300 rounded-md text-sm font-bold transition-colors cursor-pointer shadow-sm"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5"/>
+        <path d="M12 19l-7-7 7-7"/>
+      </svg>
+      Volver
+    </button>
+  </div>
+
+  <div class="bg-white p-6 rounded-lg shadow-sm mb-6">
+    <h2 class="text-2xl font-bold text-gray-800 mb-2">{nombreCategoria}</h2>
+    {categoriaActual?.descripcion_categoria && (
+      <p class="text-gray-600 text-sm">{categoriaActual.descripcion_categoria}</p>
+    )}
+  </div>
+
+  {productos && productos.length > 0 ? (
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      {productos.map((producto) => (
+        <VehicleCard vehiculo={producto} />
+      ))}
+    </div>
+  ) : (
+    <div class="bg-white p-8 rounded-lg text-center shadow-sm">
+      <p class="text-gray-500 italic">No hay vehículos disponibles en esta categoría actualmente.</p>
+    </div>
+  )}
+</LayoutBase>

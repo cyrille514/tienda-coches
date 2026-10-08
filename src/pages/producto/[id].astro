@@ -1,0 +1,142 @@
+---
+// src/pages/producto/[id].astro
+import LayoutBase from "../../layouts/LayoutBase.astro";
+import { supabase } from "../../lib/supabase";
+
+const { id } = Astro.params;
+
+// Récupération du produit depuis Supabase
+const { data: producto, error } = await supabase
+  .from('productos')
+  .select('*')
+  .eq('pk_producto', id)
+  .maybeSingle();
+
+if (error || !producto) {
+  return Astro.redirect('/productos?categoria=1');
+}
+
+// Calcul du prix avec 21% IVA inclus
+const precioBase = Number(producto.precio);
+const precioConIva = (precioBase * 1.21).toFixed(2);
+---
+
+<LayoutBase title={`${producto.nombre_producto} - Tienda de Coches`} categoriaActivaId={producto.fk_categoria}>
+  
+  <!-- BOUTON VOLVER -->
+  <div class="mb-4">
+    <button 
+      onclick="window.history.back()" 
+      class="inline-flex items-center gap-2 px-3 py-1.5 bg-white text-gray-700 hover:bg-gray-100 border border-gray-300 rounded-md text-sm font-semibold transition-colors cursor-pointer shadow-sm"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+      Volver
+    </button>
+  </div>
+
+  <!-- CONTENEUR DU PRODUIT (STYLE MAQUETTE) -->
+  <div class="bg-[#f2ebdc] p-8 rounded-lg shadow-sm border border-[#e2d8c3] grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+    
+    <!-- IMAGE DU VÉHICULE -->
+    <div class="flex justify-center items-center">
+      <img 
+        src={producto.url_imagen || '/placeholder.jpg'} 
+        alt={producto.nombre_producto} 
+        class="max-h-80 w-auto object-contain rounded-md"
+      />
+    </div>
+
+    <!-- DETAILS ET DONNÉES -->
+    <div class="flex flex-col justify-center space-y-3 text-center md:text-left">
+      <h1 class="text-3xl font-extrabold text-[#2a3e40]">{producto.nombre_producto}</h1>
+      
+      <p class="text-sm text-gray-700 font-medium">
+        color {producto.color || 'plata'}, {producto.tamano || '45x35x70 cm'}
+      </p>
+      <p class="text-sm text-gray-600">
+        Referencia {producto.referencia || `GRP_${producto.pk_producto}03029`}
+      </p>
+
+      <!-- PRIX ET IVA -->
+      <div class="pt-2">
+        <span class="text-3xl font-black text-black">
+          {Number(precioConIva).toLocaleString('es-ES', { minimumFractionDigits: 2 })} €
+        </span>
+        <p class="text-xs text-gray-600 font-medium mt-0.5">21% IVA incluido</p>
+      </div>
+
+      <!-- SÉLECTEUR DE QUANTITÉ -->
+      <div class="flex items-center justify-center md:justify-start gap-3 pt-4">
+        <span class="text-sm font-bold text-gray-800">Cantidad:</span>
+        <div class="flex items-center bg-white border border-gray-300 rounded shadow-sm">
+          <button id="btn-minus" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 font-bold text-gray-700 transition-colors">-</button>
+          <span id="cantidad-val" class="px-4 py-1 font-bold text-gray-900">1</span>
+          <button id="btn-plus" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 font-bold text-gray-700 transition-colors">+</button>
+        </div>
+      </div>
+
+      <!-- BOUTON AJOUTER AU PANIER -->
+      <div class="pt-4">
+        <button 
+          id="btn-add-cart"
+          class="w-full md:w-auto bg-black hover:bg-gray-800 text-white font-bold py-3 px-8 rounded shadow-md transition-colors cursor-pointer text-sm"
+        >
+          Añadir a la cesta
+        </button>
+      </div>
+    </div>
+  </div>
+</LayoutBase>
+
+<script is:inline define:vars={{ producto, precioConIva }}>
+  let cantidad = 1;
+  const cantSpan = document.getElementById('cantidad-val');
+  const btnMinus = document.getElementById('btn-minus');
+  const btnPlus = document.getElementById('btn-plus');
+  const btnAdd = document.getElementById('btn-add-cart');
+
+  btnMinus?.addEventListener('click', () => {
+    if (cantidad > 1) {
+      cantidad--;
+      cantSpan.textContent = cantidad;
+    }
+  });
+
+  btnPlus?.addEventListener('click', () => {
+    cantidad++;
+    cantSpan.textContent = cantidad;
+  });
+
+  // Gestion du panier via localStorage (CRUD)
+  btnAdd?.addEventListener('click', () => {
+    const CART_KEY = 'tienda_coches_carrito';
+    let cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+
+    const existingIndex = cart.findIndex(item => item.pk_producto === producto.pk_producto);
+
+    if (existingIndex > -1) {
+      cart[existingIndex].cantidad += cantidad;
+    } else {
+      cart.push({
+        pk_producto: producto.pk_producto,
+        nombre_producto: producto.nombre_producto,
+        precio: Number(precioConIva),
+        url_imagen: producto.url_imagen,
+        referencia: producto.referencia || `GRP_${producto.pk_producto}03029`,
+        color: producto.color || 'plata',
+        cantidad: cantidad
+      });
+    }
+
+    localStorage.setItem(CART_KEY, JSON.stringify(cart));
+
+    // Update du compteur du header
+    const totalItems = cart.reduce((sum, item) => sum + item.cantidad, 0);
+    const badge = document.getElementById('cart-badge');
+    if (badge) {
+      badge.textContent = totalItems;
+      badge.classList.remove('hidden');
+    }
+
+  });
+</script>
