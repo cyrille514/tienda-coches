@@ -26,7 +26,6 @@ if (accessToken && refreshToken) {
     <div class="relative w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
       
       {user ? (
-        <!-- VISTA DE USUARIO AUTENTICADO -->
         <div class="p-8 text-center text-white space-y-4">
           <h1 class="text-3xl font-bold text-emerald-400">¡Bienvenido!</h1>
           <p class="text-slate-300">Sesión iniciada con: <strong>{user.email}</strong></p>
@@ -39,10 +38,9 @@ if (accessToken && refreshToken) {
           </form>
         </div>
       ) : (
-        <!-- VISTA DE LOGIN Y REGISTRO (DOS COLUMNAS) -->
         <div class="flex flex-col md:flex-row w-full min-h-[460px]">
           
-          <!-- COLUMNA IZQUIERDA: Google OAuth -->
+          {/* COLUMNA IZQUIERDA: Google OAuth */}
           <div class="w-full md:w-1/2 p-8 flex flex-col justify-between items-center border-b md:border-b-0 md:border-r border-slate-800 bg-slate-900">
             <div class="my-auto w-full text-center">
               <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-800 mb-4">
@@ -70,7 +68,7 @@ if (accessToken && refreshToken) {
             </div>
           </div>
 
-          <!-- COLUMNA DROITE: Formulario de Registro -->
+          {/* COLUMNA DERECHA: Formulario de Registro */}
           <div class="w-full md:w-1/2 p-8 bg-slate-800/40 flex flex-col justify-center">
             <h3 class="text-base font-semibold text-blue-400 mb-4 leading-snug">
               Formulario de registro con los datos del nuevo cliente.
@@ -130,4 +128,3 @@ if (accessToken && refreshToken) {
     }
   });
 </script>
-
