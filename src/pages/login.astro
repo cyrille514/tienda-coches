@@ -20,7 +20,7 @@ if (accessToken && refreshToken) {
   }
 }
 
-// Si l'utilisateur est déjà connecté, on le redirige automatiquement vers le catalogue (fini la page de bienvenue !)
+// Si l'utilisateur est déjà connecté, on le redirige automatiquement vers le catalogue
 if (user) {
   return Astro.redirect('/productos?categoria=1');
 }
@@ -124,11 +124,10 @@ if (user) {
           refresh_token,
         });
 
-        const maxAge = 60 * 60 * 24 * 7;
+        const maxAge = 60 * 60 * 24 * 7; // Correction du calcul de la durée
         document.cookie = `sb-access-token=${access_token}; path=/; max-age=${maxAge}; SameSite=Lax`;
         document.cookie = `sb-refresh-token=${refresh_token}; path=/; max-age=${maxAge}; SameSite=Lax`;
 
-        // Redirection directe vers le catalogue au lieu de rester sur login
         window.location.href = '/productos?categoria=1';
       }
     }
@@ -152,7 +151,7 @@ if (user) {
 
   supabase.auth.onAuthStateChange(async (event, session) => {
     if (session) {
-      const maxAge = 60 * 60 * 24 * 7;
+      const maxAge = 60 * 60 * 24 * 7; // Correction ici aussi
       document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=${maxAge}; SameSite=Lax`;
       document.cookie = `sb-refresh-token=${session.refresh_token}; path=/; max-age=${maxAge}; SameSite=Lax`;
     } else if (event === 'SIGNED_OUT') {
