@@ -1,4 +1,4 @@
----
+------
 // src/layouts/LayoutBase.astro
 import '../styles/global.css';
 import MenuCategorias from '../components/MenuCategorias.astro';
@@ -193,19 +193,19 @@ if (accessToken && refreshToken) {
           </div>
         </div>
 
-        <!-- COLONNE DROITE: Formulaire de Création de Compte -->
+        <!-- COLONNE DROITE: Formulaire d'inscription -->
         <div class="w-full md:w-1/2 p-8 bg-slate-800/40 flex flex-col justify-center">
           <h3 class="text-base font-semibold text-blue-400 mb-4 leading-snug">
             Formulario de registro con los datos del nuevo cliente.
           </h3>
 
-          <form class="space-y-3">
+          <form id="registro-form" class="space-y-3">
             <div>
               <label class="block text-xs text-slate-400 mb-1">Nombre y Apellidos</label>
               <input type="text" required class="w-full bg-slate-950 border border-slate-700 rounded-md p-2 text-xs text-white focus:outline-none focus:border-blue-500" placeholder="Ej. Carlos Gómez" />
             </div>
             <div>
-              <label class="block text-xs text-slate-400 mb-1">Correo electrónico o teléfono</label>
+              <label class="block text-xs text-slate-400 mb-1">Correo electrónico</label>
               <input type="email" required class="w-full bg-slate-950 border border-slate-700 rounded-md p-2 text-xs text-white focus:outline-none focus:border-blue-500" placeholder="correo@ejemplo.com" />
             </div>
             <div>
@@ -214,7 +214,7 @@ if (accessToken && refreshToken) {
             </div>
 
             <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-colors mt-2 text-xs cursor-pointer">
-              Siguiente
+              Registrarse
             </button>
           </form>
         </div>
@@ -245,6 +245,34 @@ if (accessToken && refreshToken) {
     const closeBtn = document.getElementById('close-modal-btn');
     const googleBtn = document.getElementById('modal-google-btn');
     const logoutBtn = document.getElementById('logout-btn');
+    const registroForm = document.getElementById('registro-form') as HTMLFormElement;
+
+    // 1. Capture du token Google dans l'URL hash après la redirection OAuth
+    window.addEventListener('DOMContentLoaded', async () => {
+      const hash = window.location.hash;
+      if (hash && hash.includes('access_token')) {
+        const params = new URLSearchParams(hash.substring(1));
+        const access_token = params.get('access_token');
+        const refresh_token = params.get('refresh_token');
+
+        if (access_token && refresh_token) {
+          await supabase.auth.setSession({
+            access_token,
+            refresh_token,
+          });
+
+          // Nettoyer d'anciens cookies et poser les nouveaux
+          document.cookie = 'sb-access-token=; path=/; max-age=0;';
+          document.cookie = 'sb-refresh-token=; path=/; max-age=0;';
+
+          const maxAge = 604800; // 7 jours
+          document.cookie = `sb-access-token=${access_token}; path=/; max-age=${maxAge}; SameSite=Lax; Secure`;
+          document.cookie = `sb-refresh-token=${refresh_token}; path=/; max-age=${maxAge}; SameSite=Lax; Secure`;
+
+          window.location.href = '/productos?categoria=1';
+        }
+      }
+    });
 
     // Ouverture de la modale
     userBtn?.addEventListener('click', (e) => {
@@ -271,18 +299,48 @@ if (accessToken && refreshToken) {
     });
 
     // Action Google OAuth
-    // Action Google OAuth
-googleBtn?.addEventListener('click', async () => {
-  await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: 'https://tienda-coches.vercel.app/productos?categoria=1',
-      queryParams: {
-        prompt: 'select_account',
-      },
-    },
-  });
-});
+    googleBtn?.addEventListener('click', async () => {
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/productos?categoria=1`,
+          queryParams: {
+            prompt: 'select_account',
+          },
+        },
+      });
+    });
+
+    // Action Formulaire d'inscription (Email / Mot de passe)
+    registroForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const inputs = registroForm.querySelectorAll('input');
+      const fullName = inputs[0].value;
+      const email = inputs[1].value;
+      const password = inputs[2].value;
+
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: fullName }
+        }
+      });
+
+      if (error) {
+        alert('Error al crear la cuenta: ' + error.message);
+      } else {
+        if (data.session) {
+          const maxAge = 604800;
+          document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=${maxAge}; SameSite=Lax; Secure`;
+          document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=${maxAge}; SameSite=Lax; Secure`;
+          window.location.href = '/productos?categoria=1';
+        } else {
+          alert('¡Cuenta creada con éxito! Ya puedes iniciar sesión.');
+          window.location.reload();
+        }
+      }
+    });
 
     // Action Déconnexion (Salir)
     logoutBtn?.addEventListener('click', async () => {
