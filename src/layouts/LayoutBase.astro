@@ -1,4 +1,4 @@
-------
+---
 // src/layouts/LayoutBase.astro
 import '../styles/global.css';
 import MenuCategorias from '../components/MenuCategorias.astro';
@@ -247,7 +247,7 @@ if (accessToken && refreshToken) {
     const logoutBtn = document.getElementById('logout-btn');
     const registroForm = document.getElementById('registro-form') as HTMLFormElement;
 
-    // 1. Capture du token Google dans l'URL hash après la redirection OAuth
+    // 1. Capture robuste du token OAuth (Hash ou Session Supabase existante)
     window.addEventListener('DOMContentLoaded', async () => {
       const hash = window.location.hash;
       if (hash && hash.includes('access_token')) {
@@ -256,12 +256,13 @@ if (accessToken && refreshToken) {
         const refresh_token = params.get('refresh_token');
 
         if (access_token && refresh_token) {
+          // Définir la session dans le client Supabase
           await supabase.auth.setSession({
             access_token,
             refresh_token,
           });
 
-          // Nettoyer d'anciens cookies et poser les nouveaux
+          // Nettoyer les anciens cookies et poser les nouveaux
           document.cookie = 'sb-access-token=; path=/; max-age=0;';
           document.cookie = 'sb-refresh-token=; path=/; max-age=0;';
 
@@ -270,7 +271,16 @@ if (accessToken && refreshToken) {
           document.cookie = `sb-refresh-token=${refresh_token}; path=/; max-age=${maxAge}; SameSite=Lax; Secure`;
 
           window.location.href = '/productos?categoria=1';
+          return;
         }
+      }
+
+      // S'il n'y a pas de hash, vérifier si une session locale Supabase existe et synchroniser les cookies si besoin
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const maxAge = 604800;
+        document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=${maxAge}; SameSite=Lax; Secure`;
+        document.cookie = `sb-refresh-token=${session.refresh_token}; path=/; max-age=${maxAge}; SameSite=Lax; Secure`;
       }
     });
 
