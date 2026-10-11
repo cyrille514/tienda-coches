@@ -68,13 +68,13 @@ if (user) {
             Formulario de registro con los datos del nuevo cliente.
           </h3>
 
-          <form class="space-y-3">
+          <form id="registro-form" class="space-y-3">
             <div>
               <label class="block text-xs text-slate-400 mb-1">Nombre y Apellidos</label>
               <input type="text" required class="w-full bg-slate-950 border border-slate-700 rounded-md p-2 text-xs text-white focus:outline-none focus:border-blue-500" placeholder="Ej. Carlos Gómez" />
             </div>
             <div>
-              <label class="block text-xs text-slate-400 mb-1">Correo electrónico o teléfono</label>
+              <label class="block text-xs text-slate-400 mb-1">Correo electrónico</label>
               <input type="email" required class="w-full bg-slate-950 border border-slate-700 rounded-md p-2 text-xs text-white focus:outline-none focus:border-blue-500" placeholder="correo@ejemplo.com" />
             </div>
             <div>
@@ -83,7 +83,7 @@ if (user) {
             </div>
 
             <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-colors mt-2 text-xs cursor-pointer">
-              Siguiente
+              Registrarse
             </button>
           </form>
         </div>
@@ -97,12 +97,12 @@ if (user) {
 <script>
   import { supabase } from '../lib/supabase';
 
+  // 1. Connexion OAuth Google
   const loginBtn = document.getElementById('login-btn');
   loginBtn?.addEventListener('click', async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        // On redirige vers /login pour capturer le token proprement
         redirectTo: `${window.location.origin}/login`,
         queryParams: {
           prompt: 'select_account',
@@ -111,7 +111,39 @@ if (user) {
     });
   });
 
-  // Capturer le token dans l'URL hash après la connexion Google et rediriger
+  // 2. Inscription classique (Email / Mot de passe)
+  const registroForm = document.getElementById('registro-form');
+  registroForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const inputs = registroForm.querySelectorAll('input');
+    const fullName = inputs[0].value;
+    const email = inputs[1].value;
+    const password = inputs[2].value;
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: fullName }
+      }
+    });
+
+    if (error) {
+      alert('Error al crear la cuenta: ' + error.message);
+    } else {
+      if (data.session) {
+        const maxAge = 604800;
+        document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=${maxAge}; SameSite=Lax; Secure`;
+        document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=${maxAge}; SameSite=Lax; Secure`;
+        window.location.href = '/productos?categoria=1';
+      } else {
+        alert('¡Cuenta creada con éxito! Revisa tu correo o inicia sesión.');
+        window.location.reload();
+      }
+    }
+  });
+
+  // 3. Capture du token Google dans l'URL hash après la redirection
   window.addEventListener('DOMContentLoaded', async () => {
     const hash = window.location.hash;
     if (hash && hash.includes('access_token')) {
@@ -125,7 +157,7 @@ if (user) {
           refresh_token,
         });
 
-        const maxAge = 604800; // 7 jours en secondes (corrigé)
+        const maxAge = 604800; // 7 jours
         document.cookie = `sb-access-token=${access_token}; path=/; max-age=${maxAge}; SameSite=Lax; Secure`;
         document.cookie = `sb-refresh-token=${refresh_token}; path=/; max-age=${maxAge}; SameSite=Lax; Secure`;
 
@@ -134,6 +166,7 @@ if (user) {
     }
   });
 
+  // 4. Animation du bouton de création de compte
   const crearCuentaBtn = document.getElementById('crear-cuenta-btn');
   const registroSection = document.getElementById('registro-section');
 
@@ -150,9 +183,10 @@ if (user) {
     }, 1000);
   });
 
+  // 5. Gestion des changements d'état de session
   supabase.auth.onAuthStateChange(async (event, session) => {
     if (session) {
-      const maxAge = 604800; // 7 jours en secondes
+      const maxAge = 604800;
       document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=${maxAge}; SameSite=Lax; Secure`;
       document.cookie = `sb-refresh-token=${session.refresh_token}; path=/; max-age=${maxAge}; SameSite=Lax; Secure`;
     } else if (event === 'SIGNED_OUT') {
@@ -161,3 +195,4 @@ if (user) {
     }
   });
 </script>
+
