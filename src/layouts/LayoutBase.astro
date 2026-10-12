@@ -75,16 +75,15 @@ if (accessToken && refreshToken) {
           </div>
         ) : (
           /* S'IL N'EST PAS CONNECTÉ : Bouton classique qui ouvre la modale */
-          <button 
-            type="button" 
-            id="user-icon-btn"
-            class="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors text-sm font-medium cursor-pointer focus:outline-none"
-          >
-            <svg class="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-            <span class="hidden sm:inline">Usuarios</span>
-          </button>
+          <a 
+  href="/login"
+  class="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors text-sm font-medium cursor-pointer focus:outline-none"
+>
+  <svg class="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+  </svg>
+  <span class="hidden sm:inline">Usuarios</span>
+</a>
         )}
 
         <!-- BOUTON PANIER / CARRITO -->
