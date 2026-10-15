@@ -25,12 +25,13 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     return new Response('Sesión inválida', { status: 401 });
   }
 
+  // Utilisation des colonnes exactes : pk_cliente, nombre_cliente, telefono_movil, email
   const textQuery = `
-    INSERT INTO clientes (id, nombre, telefono, email)
+    INSERT INTO clientes (pk_cliente, nombre_cliente, telefono_movil, email)
     VALUES ($1, $2, $3, $4)
-    ON CONFLICT (id) DO UPDATE 
-    SET nombre = EXCLUDED.nombre, 
-        telefono = EXCLUDED.telefono;
+    ON CONFLICT (pk_cliente) DO UPDATE 
+    SET nombre_cliente = EXCLUDED.nombre_cliente, 
+        telefono_movil = EXCLUDED.telefono_movil;
   `;
   
   const values = [user.id, nombre, telefono, user.email];
