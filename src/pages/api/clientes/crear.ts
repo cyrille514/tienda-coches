@@ -37,7 +37,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
       });
     }
 
-    // 1. Sauvegarde dans Supabase (PostgreSQL pool)
+    // 1. Sauvegarde dans Supabase avec le pool de connexions (pg) et ON CONFLICT
     const textQuery = `
       INSERT INTO clientes (pk_cliente, nombre_cliente, telefono_movil, email)
       VALUES ($1, $2, $3, $4)
@@ -52,7 +52,6 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     const brevoApiKey = import.meta.env.BREVO_API_KEY;
 
     if (brevoApiKey) {
-      // Nettoyage et conversion du téléphone en nombre si l'attribut Brevo est de type Numéro
       const numClean = parseInt(telefono.replace(/\D/g, ''), 10);
 
       const brevoResponse = await fetch('https://api.brevo.com/v3/contacts', {
