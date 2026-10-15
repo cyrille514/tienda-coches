@@ -1,75 +1,99 @@
 // src/pages/api/clientes/crear.ts
 import type { APIRoute } from 'astro';
-import pool from '@/lib/db';
 import { supabase } from '@/lib/supabase';
+import { pool } from '@/lib/db';
 
 export const POST: APIRoute = async ({ request, cookies, redirect }) => {
-  const formData = await request.formData();
-  const nombre = formData.get('nombre')?.toString() || '';
-  const telefono = formData.get('telefono')?.toString() || '';
-  const enviarBrevo = formData.get('enviar-brevo')?.toString() === 'true';
+  try {
+    // 1. Récupérer les tokens de session depuis les cookies
+    const accessToken = cookies.get('sb-access-token')?.value;
+    const refreshToken = cookies.get('sb-refresh-token')?.value;
 
-  const accessToken = cookies.get('sb-access-token');
-  const refreshToken = cookies.get('sb-refresh-token');
+    if (!accessToken || !refreshToken) {
+      return new Response(JSON.stringify({ error: 'Usuario no autenticado' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
-  if (!accessToken || !refreshToken) {
-    return new Response('No autorizado', { status: 401 });
-  }
+    // 2. Vérifier la session avec Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
 
-  const { data: { user }, error: authError } = await supabase.auth.setSession({
-    access_token: accessToken.value,
-    refresh_token: refreshToken.value,
-  });
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Sesión no válida' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
-  if (authError || !user) {
-    return new Response('Sesión inválida', { status: 401 });
-  }
+    // 3. Extraction des données du formulaire
+    const formData = await request.formData();
+    const nombre = formData.get('nombre_cliente')?.toString() || formData.get('nombre')?.toString() || '';
+    const telefono = formData.get('telefono_movil')?.toString() || formData.get('telefono')?.toString() || '';
+    const email = user.email || '';
+    const pk_cliente = user.id;
 
-  // Utilisation des colonnes exactes : pk_cliente, nombre_cliente, telefono_movil, email
-     const textQuery = `
+    if (!nombre || !telefono) {
+      return new Response(JSON.stringify({ error: 'Nombre y teléfono son obligatorios' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // 4. Inscription / Mise à jour dans Supabase (pg pool)
+    const textQuery = `
       INSERT INTO clientes (pk_cliente, nombre_cliente, telefono_movil, email)
       VALUES ($1, $2, $3, $4)
-      ON CONFLICT (email) DO UPDATE 
+      ON CONFLICT (pk_cliente) DO UPDATE 
       SET nombre_cliente = EXCLUDED.nombre_cliente, 
-      telefono_movil = EXCLUDED.telefono_movil,
-      pk_cliente = EXCLUDED.pk_cliente;
-      `;
-  
-  const values = [user.id, nombre, telefono, user.email];
+          telefono_movil = EXCLUDED.telefono_movil,
+          email = EXCLUDED.email;
+    `;
 
-  try {
+    const values = [pk_cliente, nombre, telefono, email];
     await pool.query(textQuery, values);
-  } catch (err: any) {
-    console.error('Error SQL:', err);
-    return new Response(`Error en Base de Datos: ${err.message}`, { status: 500 });
-  }
 
-  if (enviarBrevo && user.email) {
-    await enviarABrevo(user.email, nombre, telefono);
-  }
+    // 5. Envoi vers l'API Brevo avec les attributs NOM et TELEFONO
+    const brevoApiKey = import.meta.env.BREVO_API_KEY;
 
-  return redirect('/perfil');
+    if (brevoApiKey) {
+      // Nettoyage du numéro pour s'assurer qu'il s'agisse d'une valeur numérique si nécessaire
+      const numTelefono = parseInt(telefono.replace(/\D/g, ''), 10) || telefono;
+
+      const brevoResponse = await fetch('https://api.brevo.com/v3/contacts', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'content-type': 'application/json',
+          'api-key': brevoApiKey,
+        },
+        body: JSON.stringify({
+          email: email,
+          attributes: {
+            NOM: nombre,          // Attribut 'NOM' défini dans Brevo
+            TELEFONO: numTelefono // Attribut 'TELEFONO' défini dans Brevo
+          },
+          updateEnabled: true,    // Met à jour le contact s'il existe déjà
+        }),
+      });
+
+      if (!brevoResponse.ok) {
+        const errorData = await brevoResponse.json();
+        console.error('Erreur API Brevo :', errorData);
+      } else {
+        console.log('Contact synchronisé avec succès sur Brevo !');
+      }
+    } else {
+      console.warn('BREVO_API_KEY non trouvée dans les variables d’environnement.');
+    }
+
+    // Redirection vers le profil
+    return redirect('/perfil?success=true');
+  } catch (error) {
+    console.error('Erreur dans crear.ts :', error);
+    return new Response(JSON.stringify({ error: 'Error interno del servidor' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 };
-
-async function enviarABrevo(email: string, nombre: string, telefono: string) {
-  const BREVO_API_KEY = import.meta.env.BREVO_API_KEY;
-
-  if (!BREVO_API_KEY) return;
-
-  await fetch('https://api.brevo.com/v3/contacts', {
-    method: 'POST',
-    headers: {
-      'accept': 'application/json',
-      'content-type': 'application/json',
-      'api-key': BREVO_API_KEY,
-    },
-    body: JSON.stringify({
-      email: email,
-      attributes: {
-        NOMBRE: nombre,
-        TELEFONO: telefono,
-      },
-      updateEnabled: true,
-    }),
-  });
-}
