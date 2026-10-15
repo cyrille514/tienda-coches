@@ -54,11 +54,25 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     await pool.query(textQuery, values);
 
     // 5. Envoi vers l'API Brevo avec les attributs NOM et TELEFONO
+    // 5. Envoi vers l'API Brevo (Sendinblue)
     const brevoApiKey = import.meta.env.BREVO_API_KEY;
 
     if (brevoApiKey) {
-      // Nettoyage du numéro pour s'assurer qu'il s'agisse d'une valeur numérique si nécessaire
-      const numTelefono = parseInt(telefono.replace(/\D/g, ''), 10) || telefono;
+      // Nettoyage pour ne garder que les chiffres (ex: 34631172184)
+      const soloNumeros = telefono.replace(/\D/g, '');
+      const numeroConvertido = parseInt(soloNumeros, 10);
+
+      const payloadBrevo = {
+        email: email,
+        attributes: {
+          NOM: nombre,
+          // Envoyons le nombre si lisible, ou la chaîne nettoyée
+          TELEFONO: isNaN(numeroConvertido) ? soloNumeros : numeroConvertido,
+        },
+        updateEnabled: true,
+      };
+
+      console.log('Envoi vers Brevo avec payload:', JSON.stringify(payloadBrevo));
 
       const brevoResponse = await fetch('https://api.brevo.com/v3/contacts', {
         method: 'POST',
@@ -67,24 +81,18 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
           'content-type': 'application/json',
           'api-key': brevoApiKey,
         },
-        body: JSON.stringify({
-          email: email,
-          attributes: {
-            NOM: nombre,          // Attribut 'NOM' défini dans Brevo
-            TELEFONO: numTelefono // Attribut 'TELEFONO' défini dans Brevo
-          },
-          updateEnabled: true,    // Met à jour le contact s'il existe déjà
-        }),
+        body: JSON.stringify(payloadBrevo),
       });
 
+      const responseData = await brevoResponse.json();
+
       if (!brevoResponse.ok) {
-        const errorData = await brevoResponse.json();
-        console.error('Erreur API Brevo :', errorData);
+        console.error('Erreur API Brevo (Status ' + brevoResponse.status + ') :', JSON.stringify(responseData));
       } else {
-        console.log('Contact synchronisé avec succès sur Brevo !');
+        console.log('Contact synchronisé avec succès sur Brevo ! ID:', responseData);
       }
     } else {
-      console.warn('BREVO_API_KEY non trouvée dans les variables d’environnement.');
+      console.warn('BREVO_API_KEY introuvable dans les variables d’environnement.');
     }
 
     // Redirection vers le profil
