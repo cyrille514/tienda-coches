@@ -1,90 +1,72 @@
-// src/pages/api/clientes/crear.ts
 import type { APIRoute } from 'astro';
-import { supabase } from '@/lib/supabase';
-import { pool } from '@/lib/db';
+import { pool } from '../../../lib/db';
 
-export const POST: APIRoute = async ({ request, cookies, redirect }) => {
+export const POST: APIRoute = async ({ request, redirect }) => {
   try {
-    const accessToken = cookies.get('sb-access-token')?.value;
-    const refreshToken = cookies.get('sb-refresh-token')?.value;
-
-    if (!accessToken || !refreshToken) {
-      return new Response(JSON.stringify({ error: 'Usuario no autenticado' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
-
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Sesión no válida' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
     const formData = await request.formData();
+    const pk_cliente = formData.get('pk_cliente')?.toString() || '';
     const nombre = formData.get('nombre')?.toString() || '';
+    const email = formData.get('email')?.toString() || '';
     const telefono = formData.get('telefono')?.toString() || '';
-    const email = user.email || '';
-    const pk_cliente = user.id;
 
-    if (!nombre || !telefono) {
-      return new Response(JSON.stringify({ error: 'Nombre y teléfono son obligatorios' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    if (!pk_cliente || !email) {
+      return new Response('Missing required fields', { status: 400 });
     }
 
-    // 1. Sauvegarde dans Supabase avec le pool de connexions (pg) et ON CONFLICT
-    const textQuery = `
-      INSERT INTO clientes (pk_cliente, nombre_cliente, telefono_movil, email)
-      VALUES ($1, $2, $3, $4)
-      ON CONFLICT (pk_cliente) DO UPDATE 
-      SET nombre_cliente = EXCLUDED.nombre_cliente, 
-          telefono_movil = EXCLUDED.telefono_movil,
-          email = EXCLUDED.email;
-    `;
-    await pool.query(textQuery, [pk_cliente, nombre, telefono, email]);
+    // 1. Mise à jour / Insertion dans la base de données PostgreSQL (Supabase)
+    const client = await pool.connect();
+    try {
+      await client.query(
+        `INSERT INTO clientes (pk_cliente, nombre_cliente, email, telefono_movil)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (pk_cliente) 
+         DO UPDATE SET 
+           nombre_cliente = EXCLUDED.nombre_cliente,
+           email = EXCLUDED.email,
+           telefono_movil = EXCLUDED.telefono_movil`,
+        [pk_cliente, nombre, email, telefono]
+      );
+    } finally {
+      client.release();
+    }
 
-    // 2. Synchronisation avec Brevo
+    // 2. Synchronisation avec l'API Brevo
     const brevoApiKey = import.meta.env.BREVO_API_KEY;
 
     if (brevoApiKey) {
-      const numClean = parseInt(telefono.replace(/\D/g, ''), 10);
+      // Nettoyage et formatage du téléphone en texte (string)
+      const telefonoString = telefono ? telefono.trim() : '';
+
+      const brevoData = {
+        email: email,
+        attributes: {
+          NOMBRE: nombre,
+          TELEFONO: telefonoString // Envoi au format texte (string)
+        },
+        updateEnabled: true
+      };
 
       const brevoResponse = await fetch('https://api.brevo.com/v3/contacts', {
         method: 'POST',
         headers: {
           'accept': 'application/json',
-          'content-type': 'application/json',
           'api-key': brevoApiKey,
+          'content-type': 'application/json'
         },
-        body: JSON.stringify({
-          email: email,
-          attributes: {
-            NOM: nombre,
-            TELEFONO: isNaN(numClean) ? telefono : numClean,
-          },
-          updateEnabled: true,
-        }),
+        body: JSON.stringify(brevoData)
       });
 
       if (!brevoResponse.ok) {
-        const errorData = await brevoResponse.json();
-        console.error('Erreur API Brevo :', JSON.stringify(errorData));
+        const errorText = await brevoResponse.text();
+        console.error('Erreur API Brevo :', errorText);
       } else {
         console.log('Contact synchronisé avec succès sur Brevo !');
       }
     }
 
-    return redirect('/perfil?success=true');
+    return redirect('/perfil?success=true', 302);
   } catch (error) {
-    console.error('Erreur interne dans crear.ts :', error);
-    return new Response(JSON.stringify({ error: 'Error interno del servidor' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    console.error('Erreur dans /api/clientes/crear :', error);
+    return new Response('Internal Server Error', { status: 500 });
   }
 };
