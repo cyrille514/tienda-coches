@@ -26,13 +26,14 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   }
 
   // Utilisation des colonnes exactes : pk_cliente, nombre_cliente, telefono_movil, email
-  const textQuery = `
-    INSERT INTO clientes (pk_cliente, nombre_cliente, telefono_movil, email)
-    VALUES ($1, $2, $3, $4)
-    ON CONFLICT (pk_cliente) DO UPDATE 
-    SET nombre_cliente = EXCLUDED.nombre_cliente, 
-        telefono_movil = EXCLUDED.telefono_movil;
-  `;
+     const textQuery = `
+      INSERT INTO clientes (pk_cliente, nombre_cliente, telefono_movil, email)
+      VALUES ($1, $2, $3, $4)
+      ON CONFLICT (email) DO UPDATE 
+      SET nombre_cliente = EXCLUDED.nombre_cliente, 
+      telefono_movil = EXCLUDED.telefono_movil,
+      pk_cliente = EXCLUDED.pk_cliente;
+      `;
   
   const values = [user.id, nombre, telefono, user.email];
 
