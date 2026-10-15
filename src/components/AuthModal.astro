@@ -1,0 +1,137 @@
+---
+// src/components/AuthModal.astro
+---
+<dialog id="auth-modal" class="p-0 rounded-2xl shadow-2xl backdrop:bg-black/80 border border-slate-800 max-w-md w-full bg-slate-900 text-white overflow-hidden m-auto">
+  <div class="relative flex flex-col w-full p-8">
+    
+    <!-- Bouton de fermeture -->
+    <button id="close-modal-btn" type="button" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl font-bold z-20 cursor-pointer">
+      ✕
+    </button>
+
+    <!-- VUE 1 : CONNEXION GOOGLE -->
+    <div id="google-login-view" class="w-full flex flex-col items-center text-center">
+      <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-800 mb-4">
+        <svg class="w-6 h-6" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+        </svg>
+      </div>
+      <h2 class="text-2xl font-bold text-white mb-1">Iniciar sesión</h2>
+      <p class="text-xs text-slate-400 mb-6">Utiliza tu cuenta de Google</p>
+
+      <button id="modal-google-btn" type="button" class="w-full flex items-center justify-center gap-3 bg-white hover:bg-slate-100 text-slate-800 font-semibold py-2.5 px-4 rounded-lg transition-colors shadow-md cursor-pointer text-sm mb-4">
+        Iniciar sesión con Google
+      </button>
+
+      <div class="text-xs text-slate-400">
+        <button type="button" id="go-to-register-btn" class="text-blue-400 font-semibold hover:underline bg-transparent border-none p-0 cursor-pointer">
+          Crear cuenta
+        </button> (Primera vez)
+      </div>
+    </div>
+
+    <!-- VUE 2 : FORMULAIRE D'INSCRIPTION -->
+    <div id="register-view" class="w-full hidden flex flex-col">
+      <div class="flex items-center justify-between mb-4">
+        <button type="button" id="back-to-login-btn" class="text-xs text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer">
+          ← Volver
+        </button>
+        <h3 class="text-sm font-semibold text-blue-400 leading-snug">Nuevo cliente</h3>
+      </div>
+
+      <form id="registro-form" class="space-y-3">
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Nombre y Apellidos</label>
+          <input type="text" required class="w-full bg-slate-950 border border-slate-700 rounded-md p-2 text-xs text-white focus:outline-none focus:border-blue-500" placeholder="Ej. Carlos Gómez" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Correo electrónico</label>
+          <input type="email" required class="w-full bg-slate-950 border border-slate-700 rounded-md p-2 text-xs text-white focus:outline-none focus:border-blue-500" placeholder="correo@ejemplo.com" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Contraseña</label>
+          <input type="password" required class="w-full bg-slate-950 border border-slate-700 rounded-md p-2 text-xs text-white focus:outline-none focus:border-blue-500" placeholder="••••••••" />
+        </div>
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-colors mt-2 text-xs cursor-pointer">
+          Registrarse
+        </button>
+      </form>
+    </div>
+
+  </div>
+</dialog>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  const modal = document.getElementById('auth-modal') as HTMLDialogElement;
+  const userBtn = document.getElementById('user-icon-btn');
+  const closeBtn = document.getElementById('close-modal-btn');
+  const googleBtn = document.getElementById('modal-google-btn');
+  const registroForm = document.getElementById('registro-form') as HTMLFormElement;
+  
+  const goToRegisterBtn = document.getElementById('go-to-register-btn');
+  const backToLoginBtn = document.getElementById('back-to-login-btn');
+  const googleLoginView = document.getElementById('google-login-view');
+  const registerView = document.getElementById('register-view');
+
+  userBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
+    googleLoginView?.classList.remove('hidden');
+    registerView?.classList.add('hidden');
+    modal?.showModal();
+  });
+
+  closeBtn?.addEventListener('click', () => modal?.close());
+
+  modal?.addEventListener('click', (e) => {
+    const dim = modal.getBoundingClientRect();
+    if (e.clientX < dim.left || e.clientX > dim.right || e.clientY < dim.top || e.clientY > dim.bottom) {
+      modal.close();
+    }
+  });
+
+  goToRegisterBtn?.addEventListener('click', () => {
+    googleLoginView?.classList.add('hidden');
+    registerView?.classList.remove('hidden');
+  });
+
+  backToLoginBtn?.addEventListener('click', () => {
+    registerView?.classList.add('hidden');
+    googleLoginView?.classList.remove('hidden');
+  });
+
+  googleBtn?.addEventListener('click', async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/productos?categoria=1`,
+        queryParams: { prompt: 'select_account' },
+      },
+    });
+  });
+
+  registroForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const inputs = registroForm.querySelectorAll('input');
+    const { data, error } = await supabase.auth.signUp({
+      email: inputs[1].value,
+      password: inputs[2].value,
+      options: { data: { full_name: inputs[0].value } }
+    });
+
+    if (error) {
+      alert('Error al crear la cuenta: ' + error.message);
+    } else if (data.session) {
+      document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=604800; SameSite=Lax; Secure`;
+      document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=604800; SameSite=Lax; Secure`;
+      window.location.href = '/productos?categoria=1';
+    } else {
+      alert('¡Cuenta creada con éxito! Ya puedes iniciar sesión.');
+      window.location.reload();
+    }
+  });
+</script>

@@ -1,0 +1,79 @@
+---
+// src/pages/perfil.astro
+import LayoutBase from '../layouts/LayoutBase.astro';
+import { supabase } from '../lib/supabase';
+
+const accessToken = Astro.cookies.get('sb-access-token');
+const refreshToken = Astro.cookies.get('sb-refresh-token');
+
+let user = null;
+let nombreActual = '';
+let telefonoActual = '';
+
+if (accessToken && refreshToken) {
+  const { data: sessionData } = await supabase.auth.setSession({
+    access_token: accessToken.value,
+    refresh_token: refreshToken.value,
+  });
+
+  if (sessionData.user) {
+    user = sessionData.user;
+    nombreActual = user.user_metadata?.full_name || user.user_metadata?.nombre || '';
+
+    const { data: cliente } = await supabase
+      .from('clientes')
+      .select('nombre, telefono')
+      .eq('id', user.id)
+      .single();
+
+    if (cliente) {
+      nombreActual = cliente.nombre || nombreActual;
+      telefonoActual = cliente.telefono || '';
+    }
+  }
+}
+
+if (!user) {
+  return Astro.redirect('/productos?categoria=1');
+}
+---
+
+<LayoutBase title="Mi Perfil | Tienda de Coches">
+  <div class="max-w-xl mx-auto glass-panel p-8 rounded-2xl shadow-xl space-y-6 text-white">
+    
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight">Mi Perfil de Cliente</h1>
+      <p class="text-xs text-slate-400 mt-1">Actualiza tus datos para sincronizarlos con nuestro sistema y base de datos.</p>
+    </div>
+
+    <form action="/api/clientes/crear" method="POST" class="flex flex-col gap-4">
+      <label class="flex flex-col text-xs font-medium text-slate-300 gap-1">
+        Nombre Completo:
+        <input 
+          type="text" 
+          name="nombre" 
+          value={nombreActual} 
+          required 
+          class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-blue-500" 
+        />
+      </label>
+
+      <label class="flex flex-col text-xs font-medium text-slate-300 gap-1">
+        Teléfono:
+        <input 
+          type="tel" 
+          name="telefono" 
+          value={telefonoActual} 
+          class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-blue-500" 
+        />
+      </label>
+
+      <input type="hidden" name="email" value={user.email} />
+      <input type="hidden" name="enviar-brevo" value="false" />
+
+      <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-4 rounded-xl transition-colors text-sm shadow-lg cursor-pointer mt-2">
+        Guardar Registro
+      </button>
+    </form>
+  </div>
+</LayoutBase>

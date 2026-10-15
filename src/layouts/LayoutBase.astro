@@ -2,6 +2,8 @@
 // src/layouts/LayoutBase.astro
 import '../styles/global.css';
 import MenuCategorias from '../components/MenuCategorias.astro';
+import Nav from '../components/Nav.astro';
+import AuthModal from '../components/AuthModal.astro';
 import { supabase } from '../lib/supabase';
 
 interface Props {
@@ -11,7 +13,7 @@ interface Props {
 
 const { title = "Tienda de Coches | Exclusive Motors", categoriaActivaId } = Astro.props;
 
-// VÉRIFICATION SERVEUR : Récupération de la session utilisateur via les cookies
+// Gestion de session serveur
 const accessToken = Astro.cookies.get('sb-access-token');
 const refreshToken = Astro.cookies.get('sb-refresh-token');
 
@@ -21,9 +23,7 @@ if (accessToken && refreshToken) {
     access_token: accessToken.value,
     refresh_token: refreshToken.value,
   });
-  if (data.user) {
-    user = data.user;
-  }
+  if (data.user) user = data.user;
 }
 ---
 
@@ -39,75 +39,14 @@ if (accessToken && refreshToken) {
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col antialiased">
 
-  <!-- HEADER D'EN-TÊTE PREMIUM -->
-  <header class="sticky top-0 z-50 glass-panel border-b border-slate-800/80">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-      
-      <!-- LOGO -->
-      <a href="/productos?categoria=1" class="flex items-center gap-3 group">
-        <div>
-          <span class="text-xl font-extrabold tracking-tight text-white block leading-none">
-            TIENDA<span class="gradient-text">COCHES</span>
-          </span>
-          <span class="text-[10px] tracking-widest text-white uppercase font-semibold">Showroom Automóvil</span>
-        </div>
-      </a>
+  <!-- En-tête -->
+  <Nav />
 
-      <!-- NAVIGATION DU HEADER -->
-      <div class="flex items-center gap-4">
-        
-        {user ? (
-          <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-sm font-medium">
-            <svg class="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-            <span class="hidden sm:inline truncate max-w-[140px] text-slate-300">{user.email}</span>
-            
-            <button 
-              id="logout-btn" 
-              type="button"
-              class="ml-2 text-xs font-semibold text-red-400 hover:text-red-300 bg-red-950/50 hover:bg-red-900/60 px-2 py-1 rounded transition-colors cursor-pointer"
-              title="Cerrar sesión"
-            >
-              Salir
-            </button>
-          </div>
-        ) : (
-          <button 
-            type="button" 
-            id="user-icon-btn"
-            class="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors text-sm font-medium cursor-pointer focus:outline-none"
-          >
-            <svg class="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-            <span class="hidden sm:inline">Usuarios</span>
-          </button>
-        )}
-
-        <!-- BOUTON PANIER / CARRITO -->
-        <a href="/carrito" class="relative flex items-center gap-2.5 px-4 py-2 rounded-xl bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/30 transition-all group">
-          <svg class="w-5 h-5 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-          </svg>
-          <span class="font-semibold text-sm">Carito</span>
-          <span 
-            id="cart-badge" 
-            class="bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center hidden"
-          >
-            0
-          </span>
-        </a>
-      </div>
-
-    </div>
-  </header>
-
-  <!-- CONTENU PRINCIPAL EN GRILLE -->
+  <!-- Contenu Principal -->
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-1">
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
       
-      <!-- SIDEBAR GAUCHE -->
+      <!-- Sidebar -->
       <aside class="lg:col-span-3 space-y-6">
         <div class="glass-panel p-5 rounded-2xl">
           <MenuCategorias categoriaActivaId={categoriaActivaId} />
@@ -119,8 +58,7 @@ if (accessToken && refreshToken) {
         </div>
         <div class="glass-panel p-5 rounded-2xl space-y-3">
           <div class="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider">
-            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-            Dónde estamos
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Dónde estamos
           </div>
           <p class="text-xs text-slate-300 leading-relaxed">
             Visita nuestro showroom exclusivo en el número 114 de la calle Balmes, Barcelona.
@@ -131,7 +69,7 @@ if (accessToken && refreshToken) {
         </div>
       </aside>
 
-      <!-- COLONNE DROITE -->
+      <!-- Vue dynamique -->
       <main class="lg:col-span-9">
         <slot />
       </main>
@@ -139,87 +77,17 @@ if (accessToken && refreshToken) {
     </div>
   </div>
 
-  <!-- FOOTER -->
+  <!-- Footer -->
   <footer class="border-t border-slate-800/80 glass-panel mt-auto py-6">
     <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500">
       © 2026 LuxeMotors - Tienda de Coches. Todos los derechos reservados.
     </div>
   </footer>
 
-  <!-- MODALE POP-UP DE CONNEXION -->
-  {!user && (
-    <dialog id="auth-modal" class="p-0 rounded-2xl shadow-2xl backdrop:bg-black/80 border border-slate-800 max-w-md w-full bg-slate-900 text-white overflow-hidden m-auto">
-      <div class="relative flex flex-col w-full p-8">
-        
-        <!-- Bouton de fermeture (X) -->
-        <button id="close-modal-btn" type="button" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl font-bold z-20 cursor-pointer">
-          ✕
-        </button>
+  <!-- Modale d'authentification (si non connecté) -->
+  {!user && <AuthModal />}
 
-        <!-- VUE 1 : CONNEXION GOOGLE (Par défaut) -->
-        <div id="google-login-view" class="w-full flex flex-col items-center text-center">
-          <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-800 mb-4">
-            <svg class="w-6 h-6" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-            </svg>
-          </div>
-          <h2 class="text-2xl font-bold text-white mb-1">Iniciar sesión</h2>
-          <p class="text-xs text-slate-400 mb-6">Utiliza tu cuenta de Google</p>
-
-          <button 
-            id="modal-google-btn"
-            type="button"
-            class="w-full flex items-center justify-center gap-3 bg-white hover:bg-slate-100 text-slate-800 font-semibold py-2.5 px-4 rounded-lg transition-colors shadow-md cursor-pointer text-sm mb-4"
-          >
-            Iniciar sesión con Google
-          </button>
-
-          <div class="text-xs text-slate-400">
-            <button type="button" id="go-to-register-btn" class="text-blue-400 font-semibold hover:underline bg-transparent border-none p-0 cursor-pointer">
-              Crear cuenta
-            </button> (Primera vez)
-          </div>
-        </div>
-
-        <!-- VUE 2 : FORMULAIRE D'INSCRIPTION (Caché par défaut, s'ouvre au clic) -->
-        <div id="register-view" class="w-full hidden flex flex-col">
-          <div class="flex items-center justify-between mb-4">
-            <button type="button" id="back-to-login-btn" class="text-xs text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer">
-              ← Volver
-            </button>
-            <h3 class="text-sm font-semibold text-blue-400 leading-snug">
-              Nuevo cliente
-            </h3>
-          </div>
-
-          <form id="registro-form" class="space-y-3">
-            <div>
-              <label class="block text-xs text-slate-400 mb-1">Nombre y Apellidos</label>
-              <input type="text" required class="w-full bg-slate-950 border border-slate-700 rounded-md p-2 text-xs text-white focus:outline-none focus:border-blue-500" placeholder="Ej. Carlos Gómez" />
-            </div>
-            <div>
-              <label class="block text-xs text-slate-400 mb-1">Correo electrónico</label>
-              <input type="email" required class="w-full bg-slate-950 border border-slate-700 rounded-md p-2 text-xs text-white focus:outline-none focus:border-blue-500" placeholder="correo@ejemplo.com" />
-            </div>
-            <div>
-              <label class="block text-xs text-slate-400 mb-1">Contraseña</label>
-              <input type="password" required class="w-full bg-slate-950 border border-slate-700 rounded-md p-2 text-xs text-white focus:outline-none focus:border-blue-500" placeholder="••••••••" />
-            </div>
-
-            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-colors mt-2 text-xs cursor-pointer">
-              Registrarse
-            </button>
-          </form>
-        </div>
-
-      </div>
-    </dialog>
-  )}
-
-  <!-- SCRIPTS CLIENTS -->
+  <!-- Script global utilitaire (ex: panier) -->
   <script is:inline>
     document.addEventListener('DOMContentLoaded', () => {
       const cart = JSON.parse(localStorage.getItem('tienda_coches_carrito') || '[]');
@@ -228,147 +96,6 @@ if (accessToken && refreshToken) {
       if (badge && totalItems > 0) {
         badge.textContent = totalItems;
         badge.classList.remove('hidden');
-      }
-    });
-  </script>
-
-  <script>
-    import { supabase } from '../lib/supabase';
-
-    const modal = document.getElementById('auth-modal') as HTMLDialogElement;
-    const userBtn = document.getElementById('user-icon-btn');
-    const closeBtn = document.getElementById('close-modal-btn');
-    const googleBtn = document.getElementById('modal-google-btn');
-    const logoutBtn = document.getElementById('logout-btn');
-    const registroForm = document.getElementById('registro-form') as HTMLFormElement;
-    
-    // Éléments pour basculer entre les vues de la modale
-    const goToRegisterBtn = document.getElementById('go-to-register-btn');
-    const backToLoginBtn = document.getElementById('back-to-login-btn');
-    const googleLoginView = document.getElementById('google-login-view');
-    const registerView = document.getElementById('register-view');
-
-    window.addEventListener('DOMContentLoaded', async () => {
-      const hash = window.location.hash;
-      if (hash && hash.includes('access_token')) {
-        const params = new URLSearchParams(hash.substring(1));
-        const access_token = params.get('access_token');
-        const refresh_token = params.get('refresh_token');
-
-        if (access_token && refresh_token) {
-          await supabase.auth.setSession({
-            access_token,
-            refresh_token,
-          });
-
-          document.cookie = 'sb-access-token=; path=/; max-age=0;';
-          document.cookie = 'sb-refresh-token=; path=/; max-age=0;';
-
-          const maxAge = 604800;
-          document.cookie = `sb-access-token=${access_token}; path=/; max-age=${maxAge}; SameSite=Lax; Secure`;
-          document.cookie = `sb-refresh-token=${refresh_token}; path=/; max-age=${maxAge}; SameSite=Lax; Secure`;
-
-          window.location.href = '/productos?categoria=1';
-          return;
-        }
-      }
-
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        const maxAge = 604800;
-        document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=${maxAge}; SameSite=Lax; Secure`;
-        document.cookie = `sb-refresh-token=${session.refresh_token}; path=/; max-age=${maxAge}; SameSite=Lax; Secure`;
-      }
-    });
-
-    userBtn?.addEventListener('click', (e) => {
-      e.preventDefault();
-      // Réinitialiser la vue sur Google par défaut à l'ouverture
-      googleLoginView?.classList.remove('hidden');
-      registerView?.classList.add('hidden');
-      modal?.showModal();
-    });
-
-    closeBtn?.addEventListener('click', () => {
-      modal?.close();
-    });
-
-    modal?.addEventListener('click', (e) => {
-      const dialogDimensions = modal.getBoundingClientRect();
-      if (
-        e.clientX < dialogDimensions.left ||
-        e.clientX > dialogDimensions.right ||
-        e.clientY < dialogDimensions.top ||
-        e.clientY > dialogDimensions.bottom
-      ) {
-        modal.close();
-      }
-    });
-
-    // Basculer vers le formulaire d'inscription
-    goToRegisterBtn?.addEventListener('click', () => {
-      googleLoginView?.classList.add('hidden');
-      registerView?.classList.remove('hidden');
-    });
-
-    // Revenir à l'écran de connexion Google
-    backToLoginBtn?.addEventListener('click', () => {
-      registerView?.classList.add('hidden');
-      googleLoginView?.classList.remove('hidden');
-    });
-
-    googleBtn?.addEventListener('click', async () => {
-      await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/productos?categoria=1`,
-          queryParams: {
-            prompt: 'select_account',
-          },
-        },
-      });
-    });
-
-    registroForm?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const inputs = registroForm.querySelectorAll('input');
-      const fullName = inputs[0].value;
-      const email = inputs[1].value;
-      const password = inputs[2].value;
-
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { full_name: fullName }
-        }
-      });
-
-      if (error) {
-        alert('Error al crear la cuenta: ' + error.message);
-      } else {
-        if (data.session) {
-          const maxAge = 604800;
-          document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=${maxAge}; SameSite=Lax; Secure`;
-          document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=${maxAge}; SameSite=Lax; Secure`;
-          window.location.href = '/productos?categoria=1';
-        } else {
-          alert('¡Cuenta creada con éxito! Ya puedes iniciar sesión.');
-          window.location.reload();
-        }
-      }
-    });
-
-    logoutBtn?.addEventListener('click', async (e) => {
-      e.preventDefault();
-      try {
-        await supabase.auth.signOut();
-      } catch (err) {
-        console.error('Erreur Supabase signOut:', err);
-      } finally {
-        document.cookie = 'sb-access-token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 UTC;';
-        document.cookie = 'sb-refresh-token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 UTC;';
-        window.location.href = '/productos?categoria=1';
       }
     });
   </script>
