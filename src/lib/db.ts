@@ -9,6 +9,9 @@ export const pool = new Pool({
   idleTimeoutMillis: 10000,
   connectionTimeoutMillis: 2000,
 });
+
+// Indispensable pour les autres fichiers qui utilisent l'import par défaut
+export default pool;
 // (1) Cadena de conexión a la base de datos
 // (2) Configuración SSL para Supabase
 // (3) En Serverless, 1 conexión por instancia suele ser lo óptimo
