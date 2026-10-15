@@ -1,6 +1,7 @@
 // src/pages/api/clientes/crear.ts
 import type { APIRoute } from 'astro';
-import { supabase } from '../../../lib/supabase';
+import { supabase } from '@/lib/supabase';
+import { pool } from '@/lib/db';
 
 export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   try {
@@ -36,24 +37,22 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
       });
     }
 
-    // 1. Enregistrement / Mise à jour directe via Supabase
-    const { error: dbError } = await supabase
-      .from('clientes')
-      .upsert({
-        pk_cliente: pk_cliente,
-        nombre_cliente: nombre,
-        telefono_movil: telefono,
-        email: email
-      }, { onConflict: 'pk_cliente' });
-
-    if (dbError) {
-      console.error('Erreur Supabase :', dbError);
-    }
+    // 1. Sauvegarde dans Supabase (PostgreSQL pool)
+    const textQuery = `
+      INSERT INTO clientes (pk_cliente, nombre_cliente, telefono_movil, email)
+      VALUES ($1, $2, $3, $4)
+      ON CONFLICT (pk_cliente) DO UPDATE 
+      SET nombre_cliente = EXCLUDED.nombre_cliente, 
+          telefono_movil = EXCLUDED.telefono_movil,
+          email = EXCLUDED.email;
+    `;
+    await pool.query(textQuery, [pk_cliente, nombre, telefono, email]);
 
     // 2. Synchronisation avec Brevo
     const brevoApiKey = import.meta.env.BREVO_API_KEY;
 
     if (brevoApiKey) {
+      // Nettoyage et conversion du téléphone en nombre si l'attribut Brevo est de type Numéro
       const numClean = parseInt(telefono.replace(/\D/g, ''), 10);
 
       const brevoResponse = await fetch('https://api.brevo.com/v3/contacts', {
