@@ -9,6 +9,7 @@ export const POST: APIRoute = async ({ request, redirect }) => {
     const email = formData.get('email')?.toString() || '';
     const telefono = formData.get('telefono')?.toString() || '';
 
+    // Vérification des champs obligatoires
     if (!pk_cliente || !email) {
       return new Response('Missing required fields', { status: 400 });
     }
@@ -34,14 +35,14 @@ export const POST: APIRoute = async ({ request, redirect }) => {
     const brevoApiKey = import.meta.env.BREVO_API_KEY;
 
     if (brevoApiKey) {
-      // Nettoyage et formatage du téléphone en texte (string)
+      // Nettoyage de la chaîne du téléphone
       const telefonoString = telefono ? telefono.trim() : '';
 
       const brevoData = {
         email: email,
         attributes: {
-          NOMBRE: nombre,
-          TELEFONO: telefonoString // Envoi au format texte (string)
+          NOM: nombre,           // Utilise l'attribut "NOM" de votre Brevo
+          TELEFONO: telefonoString // Format texte (string)
         },
         updateEnabled: true
       };
