@@ -29,7 +29,6 @@ const textoUsuario = nombreUsuario
 <header class="sticky top-0 z-50 glass-panel border-b border-slate-800/80 bg-slate-950/80 backdrop-blur">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-2">
     
-    <!-- Logo -->
     <a href="/productos?categoria=1" class="flex items-center gap-3 group shrink-0">
       <div>
         <span class="text-lg sm:text-xl font-extrabold tracking-tight text-white block leading-none">
@@ -39,10 +38,7 @@ const textoUsuario = nombreUsuario
       </div>
     </a>
 
-    <!-- Navigation actions -->
     <div class="flex items-center gap-2 sm:gap-4">
-      
-      <!-- Bouton d'identification / Nom utilisateur -->
       <a href={nombreUsuario ? "/perfil" : "/login"}
          class="flex items-center gap-2 px-2.5 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors text-xs sm:text-sm font-medium focus:outline-none">
         <svg class="w-5 h-5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -51,28 +47,56 @@ const textoUsuario = nombreUsuario
         <span id="usuario" class="hidden sm:inline truncate max-w-[120px] md:max-w-[160px]">{textoUsuario}</span>
       </a>
 
-      <!-- Bouton Panier -->
-      <a href="/carrito" class="relative flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/30 transition-all group shrink-0">
-        <svg class="w-5 h-5 transition-transform group-hover:scale-110 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-        </svg>
-        <span class="font-semibold text-xs sm:text-sm hidden xs:inline">Carrito</span>
-        <span id="cart-badge" class="bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center hidden">0</span>
-      </a>
+      <!-- Bouton Panier avec Globito (Badge) -->
+      <div class="relative shrink-0">
+        <a href="/carrito" class="relative flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/30 transition-all group">
+          <svg class="w-5 h-5 transition-transform group-hover:scale-110 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+          </svg>
+          <span class="font-semibold text-xs sm:text-sm hidden xs:inline">Carrito</span>
+          
+          <span 
+            id="cart-count"
+            class="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center hidden"
+          >
+            0
+          </span>
+        </a>
+      </div>
 
-      <!-- Bouton PERFIL -->
-      <a href="/perfil"
-         class="py-2 px-3 sm:px-3.5 text-xs sm:text-sm rounded-lg font-semibold cursor-pointer text-white border border-blue-600 bg-blue-600 hover:bg-blue-700 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 shrink-0">
+      <a href="/perfil" class="py-2 px-3 sm:px-3.5 text-xs sm:text-sm rounded-lg font-semibold cursor-pointer text-white border border-blue-600 bg-blue-600 hover:bg-blue-700 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 shrink-0">
          Perfil
       </a>
 
-      <!-- Bouton Déconnexion -->
       {nombreUsuario && (
         <a href="/api/auth/signout" class="text-xs bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 px-2.5 sm:px-3 py-2 rounded-lg transition-colors cursor-pointer flex items-center justify-center shrink-0">
           Salir
         </a>
       )}
-
     </div>
   </div>
 </header>
+
+<script>
+  const updateCartBadge = () => {
+    const badge = document.getElementById("cart-count");
+    if (!badge) return;
+
+    // Récupération de la clé 'cesta'
+    const cesta = JSON.parse(localStorage.getItem("cesta") || "[]");
+    const totalItems = cesta.reduce((acc: number, item: any) => acc + (item.cantidad || 1), 0);
+
+    if (totalItems > 0) {
+      badge.textContent = totalItems.toString();
+      badge.classList.remove("hidden");
+    } else {
+      badge.classList.add("hidden");
+    }
+  };
+
+  // 1. Mise à jour au chargement initial
+  document.addEventListener("DOMContentLoaded", updateCartBadge);
+
+  // 2. Écoute de l'événement personnalisé cestaUpdated
+  window.addEventListener("cestaUpdated", updateCartBadge);
+</script>

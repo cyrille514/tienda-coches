@@ -1,182 +1,268 @@
 ---
 // src/pages/carrito.astro
-import LayoutBase from "../layouts/LayoutBase.astro";
+import LayoutBase from '@/layouts/LayoutBase.astro';
+
+const isSuccess = Astro.url.searchParams.get('success') === 'true';
 ---
 
-<LayoutBase title="Carrito de Compras - Tienda de Coches">
-  
-  <!-- BOUTON VOLVER -->
-  <div class="mb-4">
-    <button 
-      onclick="window.history.back()" 
-      class="inline-flex items-center gap-2 px-3 py-1.5 bg-white text-gray-700 hover:bg-gray-100 border border-gray-300 rounded-md text-sm font-semibold transition-colors cursor-pointer shadow-sm"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-      Volver
-    </button>
-  </div>
-
-  <div class="bg-[#f2ebdc] p-6 md:p-8 rounded-lg shadow-sm border border-[#e2d8c3]">
-    <h1 class="text-3xl font-extrabold text-[#2a3e40] mb-6 flex items-center gap-3">
-      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-      Tu Cesta de la Compra
-    </h1>
-
-    <!-- ZONE PANIER VIDE -->
-    <div id="cart-empty" class="hidden text-center py-12 bg-white rounded-lg border border-gray-200">
-      <p class="text-gray-500 text-lg mb-4">Tu carrito está actualmente vacío.</p>
-      <a href="/productos?categoria=1" class="inline-block bg-black text-white px-6 py-2.5 rounded font-bold text-sm hover:bg-gray-800 transition-colors">
-        Ver catálogo de coches
-      </a>
+<LayoutBase title="Tu Cesta de la Compra | Tienda de Coches">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+    
+    <!-- Bouton Volver -->
+    <div class="mb-6">
+      <button 
+        onclick="window.history.back()" 
+        class="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-900 text-slate-200 hover:bg-slate-800 border border-slate-700 rounded-xl text-sm font-semibold transition-colors cursor-pointer shadow-sm"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        Volver
+      </button>
     </div>
 
-    <!-- TABLEAU / LISTE DU PANIER -->
-    <div id="cart-content" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Conteneur Principal -->
+    <div class="bg-[#f2ebdc] p-6 sm:p-10 rounded-2xl border border-[#e2d8c3] shadow-lg text-slate-900 space-y-6">
       
-      <!-- LISTE DES ARTICLES (READ, UPDATE, DELETE) -->
-      <div class="lg:col-span-2 space-y-4" id="cart-items-container">
-        <!-- Généré dynamiquement par JavaScript -->
+      <!-- Titre du Panier -->
+      <div class="flex items-center gap-3 border-b border-[#d8ccb4] pb-4">
+        <div class="p-2.5 bg-slate-900 text-white rounded-xl shadow-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+          </svg>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-[#2a3e40] tracking-tight">Tu Cesta de la Compra</h1>
       </div>
 
-      <!-- RÉCAPITULATIF DES PRIX -->
-      <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 h-fit space-y-4">
-        <h2 class="text-xl font-bold text-gray-900 border-b border-gray-100 pb-3">Resumen del pedido</h2>
-        
-        <div class="flex justify-between text-sm text-gray-600">
-          <span>Subtotal (IVA incl.)</span>
-          <span id="summary-subtotal" class="font-semibold">0,00 €</span>
+      {isSuccess ? (
+        <!-- Message de Confirmation après Paiement Réussi -->
+        <div class="bg-white p-8 sm:p-12 rounded-xl border border-emerald-200 text-center space-y-4 shadow-sm">
+          <div class="text-6xl">✅</div>
+          <h2 class="text-2xl font-extrabold text-slate-900">¡Gracias por tu compra!</h2>
+          <p class="text-emerald-700 font-semibold text-base sm:text-lg">
+            El pago se ha realizado satisfactoriamente.
+          </p>
+          <div class="pt-4">
+            <a 
+              href="/factura" 
+              class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline font-bold text-sm bg-blue-50 px-4 py-2.5 rounded-xl border border-blue-200 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+              [ Imprimir factura ]
+            </a>
+          </div>
         </div>
-        <div class="flex justify-between text-sm text-gray-600">
-          <span>Gastos de gestión</span>
-          <span class="font-semibold text-emerald-600">Gratis</span>
+      ) : (
+        <!-- Section Produits et Résumé de Commande -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+          
+          <!-- Colonne Gauche : Liste des Articles -->
+          <div class="lg:col-span-2 space-y-4">
+            <div id="cart-items" class="space-y-4 min-h-[120px]">
+              <!-- Injected dynamically via Client Script -->
+            </div>
+          </div>
+
+          <!-- Colonne Droite : Resumen del pedido -->
+          <div class="bg-white p-6 rounded-2xl border border-[#d8ccb4] shadow-sm space-y-5">
+            <h2 class="text-xl font-extrabold text-[#2a3e40] border-b border-slate-100 pb-3">Resumen del pedido</h2>
+            
+            <div class="space-y-2.5 text-sm text-slate-600 border-b border-slate-200 pb-4">
+              <div class="flex justify-between items-center">
+                <span>Subtotal (IVA incl.)</span>
+                <span id="cart-subtotal" class="font-bold text-slate-900">0,00 €</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span>Gastos de gestión</span>
+                <span class="text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded text-xs">Gratis</span>
+              </div>
+            </div>
+
+            <div class="flex justify-between items-baseline pt-1">
+              <span class="text-lg font-bold text-slate-900">Total</span>
+              <span id="cart-total" class="text-2xl font-black text-slate-900">0,00 €</span>
+            </div>
+
+            <!-- Bouton Checkout avec Logo Stripe -->
+            <button 
+              id="checkout-btn"
+              class="w-full bg-slate-950 hover:bg-slate-800 active:scale-95 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span class="bg-indigo-600 text-white px-2 py-0.5 rounded text-[10px] font-black tracking-wider uppercase">Stripe</span>
+              <span>Efectuar la compra</span>
+            </button>
+
+            <!-- Bouton Vaciar Cesta -->
+            <button 
+              id="empty-cart-btn"
+              class="w-full bg-red-50 hover:bg-red-100 text-red-600 border border-red-200/80 font-semibold py-2.5 px-4 rounded-xl text-xs transition-colors cursor-pointer"
+            >
+              Vaciar cesta
+            </button>
+          </div>
+
         </div>
-
-        <div class="border-t border-gray-200 pt-3 flex justify-between items-center">
-          <span class="text-lg font-bold text-gray-900">Total</span>
-          <span id="summary-total" class="text-2xl font-black text-black">0,00 €</span>
-        </div>
-
-        <button 
-          id="btn-checkout"
-          class="w-full bg-black hover:bg-gray-800 text-white font-bold py-3 px-4 rounded transition-colors shadow cursor-pointer text-center"
-        >
-          Finalizar compra
-        </button>
-
-        <button 
-          id="btn-clear-cart"
-          class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-2 px-4 rounded text-xs transition-colors cursor-pointer border border-red-200"
-        >
-          Vaciar cesta
-        </button>
-      </div>
+      )}
 
     </div>
   </div>
 </LayoutBase>
 
-<script is:inline>
-  const CART_KEY = 'tienda_coches_carrito';
-
-  // Charger et afficher le contenu du panier (READ)
-  function renderCart() {
-    const cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
-    const emptyState = document.getElementById('cart-empty');
-    const contentState = document.getElementById('cart-content');
-    const itemsContainer = document.getElementById('cart-items-container');
-
-    if (cart.length === 0) {
-      emptyState.classList.remove('hidden');
-      contentState.classList.add('hidden');
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Si le paiement est validé via l'URL (?success=true), on vide la cesta dans localStorage
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('success') === 'true') {
+      localStorage.removeItem('cesta');
+      window.dispatchEvent(new Event('cestaUpdated'));
       return;
     }
 
-    emptyState.classList.add('hidden');
-    contentState.classList.remove('hidden');
+    const container = document.getElementById('cart-items');
+    const subtotalEl = document.getElementById('cart-subtotal');
+    const totalEl = document.getElementById('cart-total');
+    const checkoutBtn = document.getElementById('checkout-btn') as HTMLButtonElement;
+    const emptyBtn = document.getElementById('empty-cart-btn');
 
-    // Génération du HTML pour chaque produit
-    itemsContainer.innerHTML = cart.map(item => `
-      <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex flex-col md:flex-row items-center justify-between gap-4">
-        <img src="${item.url_imagen || '/placeholder.jpg'}" alt="${item.nombre_producto}" class="w-24 h-20 object-contain rounded" />
-        
-        <div class="flex-1 text-center md:text-left">
-          <h3 class="font-bold text-gray-900 text-lg">${item.nombre_producto}</h3>
-          <p class="text-xs text-gray-500">Ref: ${item.referencia} | Color: ${item.color}</p>
-          <span class="text-sm font-bold text-emerald-600">${Number(item.precio).toLocaleString('es-ES', { minimumFractionDigits: 2 })} € / ud.</span>
-        </div>
+    const renderCart = () => {
+      const cesta = JSON.parse(localStorage.getItem('cesta') || '[]');
 
-        <!-- CONTROLEUR DE QUANTITE (UPDATE) -->
-        <div class="flex items-center gap-2">
-          <div class="flex items-center border border-gray-300 rounded">
-            <button onclick="changeQty(${item.pk_producto}, -1)" class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 font-bold text-gray-700">-</button>
-            <span class="px-3 py-1 font-bold text-sm text-gray-800">${item.cantidad}</span>
-            <button onclick="changeQty(${item.pk_producto}, 1)" class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 font-bold text-gray-700">+</button>
+      if (!container || !totalEl || !subtotalEl) return;
+
+      if (cesta.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white p-8 rounded-xl border border-dashed border-slate-300 text-center space-y-2">
+            <p class="text-slate-500 font-medium text-sm">Tu cesta de la compra está vacía.</p>
+            <a href="/productos?categoria=1" class="inline-block text-blue-600 hover:underline text-xs font-bold">Ver catálogo de vehículos →</a>
           </div>
-        </div>
-
-        <!-- SOUS-TOTAL ET SUPPRESSION (DELETE) -->
-        <div class="flex items-center gap-4">
-          <span class="font-black text-lg text-gray-900 w-24 text-right">
-            ${(item.precio * item.cantidad).toLocaleString('es-ES', { minimumFractionDigits: 2 })} €
-          </span>
-          <button onclick="removeItem(${item.pk_producto})" class="text-red-500 hover:text-red-700 p-1 cursor-pointer" title="Eliminar">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-          </button>
-        </div>
-      </div>
-    `).join('');
-
-    // Calculs finaux
-    const total = cart.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
-    document.getElementById('summary-subtotal').textContent = `${total.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €`;
-    document.getElementById('summary-total').textContent = `${total.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €`;
-    
-    // Sync du badge du header
-    const totalItems = cart.reduce((sum, item) => sum + item.cantidad, 0);
-    const badge = document.getElementById('cart-badge');
-    if (badge) {
-      badge.textContent = totalItems;
-      if (totalItems === 0) badge.classList.add('hidden');
-    }
-  }
-
-  // Modifier la quantité (UPDATE)
-  window.changeQty = function(id, delta) {
-    let cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
-    const item = cart.find(i => i.pk_producto === id);
-    if (item) {
-      item.cantidad += delta;
-      if (item.cantidad <= 0) {
-        cart = cart.filter(i => i.pk_producto !== id);
+        `;
+        subtotalEl.textContent = '0,00 €';
+        totalEl.textContent = '0,00 €';
+        if (checkoutBtn) checkoutBtn.disabled = true;
+        return;
       }
-      localStorage.setItem(CART_KEY, JSON.stringify(cart));
-      renderCart();
-    }
-  };
 
-  // Supprimer un produit (DELETE)
-  window.removeItem = function(id) {
-    let cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
-    cart = cart.filter(i => i.pk_producto !== id);
-    localStorage.setItem(CART_KEY, JSON.stringify(cart));
+      if (checkoutBtn) checkoutBtn.disabled = false;
+
+      let total = 0;
+
+      container.innerHTML = cesta.map((item: any, index: number) => {
+        const nombre = item.nombre_producto || item.nom_producto || 'Vehículo';
+        const cantidad = item.cantidad || 1;
+        const precioUnitario = Number(item.precio || 0);
+        const subtotalItem = precioUnitario * cantidad;
+        total += subtotalItem;
+
+        return `
+          <div class="bg-white p-4 sm:p-5 rounded-xl border border-[#d8ccb4] shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+            
+            <div class="flex items-center gap-4 w-full sm:w-auto">
+              <div class="w-16 h-12 bg-slate-100 rounded-lg flex items-center justify-center shrink-0 border border-slate-200 overflow-hidden">
+                ${item.url_imagen ? `<img src="${item.url_imagen}" alt="${nombre}" class="w-full h-full object-cover" />` : `<span class="text-xl">🏎️</span>`}
+              </div>
+              <div>
+                <h3 class="font-bold text-slate-900 text-base leading-tight">${nombre}</h3>
+                <p class="text-xs text-slate-500">Ref: ${item.referencia || 'GRP_' + item.pk_producto} | Color: ${item.color || 'plata'}</p>
+                <p class="text-xs font-semibold text-emerald-700 mt-0.5">${precioUnitario.toLocaleString('es-ES', { minimumFractionDigits: 2 })} € / ud.</p>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto border-t sm:border-t-0 border-slate-100 pt-3 sm:pt-0">
+              <!-- Selecteur de Quantite -->
+              <div class="flex items-center bg-slate-100 border border-slate-300 rounded-lg overflow-hidden">
+                <button data-action="decrease" data-index="${index}" class="px-2.5 py-1 text-slate-700 hover:bg-slate-200 font-bold text-xs transition-colors cursor-pointer">-</button>
+                <span class="px-3 py-1 font-bold text-slate-900 text-xs">${cantidad}</span>
+                <button data-action="increase" data-index="${index}" class="px-2.5 py-1 text-slate-700 hover:bg-slate-200 font-bold text-xs transition-colors cursor-pointer">+</button>
+              </div>
+
+              <!-- Subtotal Linea -->
+              <span class="text-base font-extrabold text-slate-900 shrink-0">
+                ${subtotalItem.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €
+              </span>
+
+              <!-- Bouton Supprimer Article -->
+              <button data-action="remove" data-index="${index}" class="text-red-500 hover:text-red-700 p-1 rounded transition-colors cursor-pointer" title="Eliminar del carrito">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+              </button>
+            </div>
+
+          </div>
+        `;
+      }).join('');
+
+      const totalFormateado = `${total.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €`;
+      subtotalEl.textContent = totalFormateado;
+      totalEl.textContent = totalFormateado;
+    };
+
+    // Chargement initial
     renderCart();
-  };
 
-  // Vaciar carrito
-  document.getElementById('btn-clear-cart')?.addEventListener('click', () => {
-    if (confirm('¿Seguro que deseas vaciar toda la cesta?')) {
-      localStorage.removeItem(CART_KEY);
+    // Gestion des clics dans la liste des produits (+, -, suppr)
+    container?.addEventListener('click', (e) => {
+      const target = (e.target as HTMLElement).closest('button');
+      if (!target) return;
+
+      const action = target.dataset.action;
+      const index = Number(target.dataset.index);
+      let cesta = JSON.parse(localStorage.getItem('cesta') || '[]');
+
+      if (action === 'increase') {
+        cesta[index].cantidad = (cesta[index].cantidad || 1) + 1;
+      } else if (action === 'decrease') {
+        if (cesta[index].cantidad > 1) {
+          cesta[index].cantidad -= 1;
+        } else {
+          cesta.splice(index, 1);
+        }
+      } else if (action === 'remove') {
+        cesta.splice(index, 1);
+      }
+
+      localStorage.setItem('cesta', JSON.stringify(cesta));
+      window.dispatchEvent(new Event('cestaUpdated'));
       renderCart();
-    }
-  });
+    });
 
-  // Valider la commande
-  document.getElementById('btn-checkout')?.addEventListener('click', () => {
-    alert('¡Gracias por tu pedido! Tu compra ha sido procesada correctamente.');
-    localStorage.removeItem(CART_KEY);
-    renderCart();
-  });
+    // Clic "Vaciar Cesta"
+    emptyBtn?.addEventListener('click', () => {
+      localStorage.removeItem('cesta');
+      window.dispatchEvent(new Event('cestaUpdated'));
+      renderCart();
+    });
 
-  // Chargement initial
-  document.addEventListener('DOMContentLoaded', renderCart);
+    // Clic "Efectuar la compra" -> Envoi vers Stripe API
+    checkoutBtn?.addEventListener('click', async () => {
+      const cesta = JSON.parse(localStorage.getItem('cesta') || '[]');
+
+      if (cesta.length === 0) {
+        alert('La cesta está vacía.');
+        return;
+      }
+
+      checkoutBtn.disabled = true;
+      checkoutBtn.textContent = 'Procesando...';
+
+      try {
+        const response = await fetch('/api/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: cesta })
+        });
+
+        const data = await response.json();
+
+        if (data.url) {
+          window.location.href = data.url; // Redirection vers Stripe Checkout
+        } else {
+          alert('Error al conectar con Stripe: ' + (data.error || 'Inténtelo de nuevo.'));
+          checkoutBtn.disabled = false;
+          checkoutBtn.textContent = 'Efectuar la compra';
+        }
+      } catch (err) {
+        console.error('Error Stripe Checkout:', err);
+        alert('Ocurrió un error al procesar la compra.');
+        checkoutBtn.disabled = false;
+        checkoutBtn.textContent = 'Efectuar la compra';
+      }
+    });
+  });
 </script>
