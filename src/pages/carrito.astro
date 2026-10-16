@@ -81,13 +81,13 @@ const isSuccess = Astro.url.searchParams.get('success') === 'true';
               <span id="cart-total" class="text-2xl font-black text-slate-900">0,00 €</span>
             </div>
 
-            <!-- Bouton Checkout avec Logo Stripe -->
+            <!-- Bouton Checkout avec le Badge Stripe -->
             <button 
               id="checkout-btn"
               class="w-full bg-slate-950 hover:bg-slate-800 active:scale-95 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span class="bg-indigo-600 text-white px-2 py-0.5 rounded text-[10px] font-black tracking-wider uppercase">Stripe</span>
-              <span>Efectuar la compra</span>
+              <span>Finalizar compra</span>
             </button>
 
             <!-- Bouton Vaciar Cesta -->
@@ -229,7 +229,7 @@ const isSuccess = Astro.url.searchParams.get('success') === 'true';
       renderCart();
     });
 
-    // Clic "Efectuar la compra" -> Envoi vers Stripe API
+    // Clic "Finalizar compra" -> Envoi vers Stripe API
     checkoutBtn?.addEventListener('click', async () => {
       const cesta = JSON.parse(localStorage.getItem('cesta') || '[]');
 
@@ -255,13 +255,13 @@ const isSuccess = Astro.url.searchParams.get('success') === 'true';
         } else {
           alert('Error al conectar con Stripe: ' + (data.error || 'Inténtelo de nuevo.'));
           checkoutBtn.disabled = false;
-          checkoutBtn.textContent = 'Efectuar la compra';
+          checkoutBtn.innerHTML = '<span class="bg-indigo-600 text-white px-2 py-0.5 rounded text-[10px] font-black tracking-wider uppercase">Stripe</span><span>Finalizar compra</span>';
         }
       } catch (err) {
         console.error('Error Stripe Checkout:', err);
         alert('Ocurrió un error al procesar la compra.');
         checkoutBtn.disabled = false;
-        checkoutBtn.textContent = 'Efectuar la compra';
+        checkoutBtn.innerHTML = '<span class="bg-indigo-600 text-white px-2 py-0.5 rounded text-[10px] font-black tracking-wider uppercase">Stripe</span><span>Finalizar compra</span>';
       }
     });
   });
