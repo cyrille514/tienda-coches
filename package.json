@@ -12,7 +12,7 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/vercel": "11.0.12",
+    "@astrojs/vercel": "11.0.15",
     "@supabase/supabase-js": "^2.116.0",
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^7.3.8",
@@ -24,6 +24,7 @@
     "esbuild": true
   },
   "devDependencies": {
-    "@types/pg": "^8.23.1"
+    "@types/pg": "^8.23.1",
+    "@types/stripe": "^8.0.417"
   }
 }

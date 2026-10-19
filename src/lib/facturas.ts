@@ -1,30 +1,29 @@
-import { db } from './db';
+// src/lib/facturas.ts
+import pool from './db';
 
-export async function getFactura(pk_factura: number | string) {
-  const { data, error } = await db
-    .from('FACTURAS')
-    .select('*, DETALLE_FACTURA(*)')
-    .eq('pk_factura', pk_factura)
-    .single();
-
-  if (error) {
-    console.error('Error fetching factura:', error);
-    return null;
-  }
-
-  return data;
+interface NuevaFactura {
+  clienteId: string;
+  stripePaymentIntentId: string;
+  iva?: number;
 }
 
-export async function crearFactura(datosFactura: Record<string, any>) {
-  const { data, error } = await db
-    .from('FACTURAS')
-    .insert([datosFactura])
-    .select();
-
-  if (error) {
-    console.error('Error creating factura:', error);
-    return null;
+/**
+ * Inserta una nueva factura en la base de datos usando SQL nativo con pg.
+ */
+export async function crearFactura({ clienteId, stripePaymentIntentId, iva = 21.00 }: NuevaFactura): Promise<any> {
+  try {
+    const query = `
+      INSERT INTO facturas (fk_cliente, stripe_payment_intent_id, iva)
+      VALUES ($1, $2, $3)
+      RETURNING *;
+    `;
+    
+    const values = [clienteId, stripePaymentIntentId, iva];
+    const { rows } = await pool.query(query, values);
+    
+    return rows[0]; // Retorna la factura insertada
+  } catch (error) {
+    console.error("Error al insertar la factura en Postgres:", error);
+    throw error;
   }
-
-  return data[0];
 }

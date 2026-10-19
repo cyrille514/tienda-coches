@@ -1,0 +1,93 @@
+---
+import "../styles/global.css";
+import LayoutBase from "../layouts/LayoutBase.astro";
+import { crearFactura } from '../lib/facturas'; // Función para guardar la factura
+import Stripe from 'stripe';
+
+const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY);
+const sessionId = Astro.url.searchParams.get('session_id');
+
+let pagoExitoso = false;
+let errorMessage = '';
+
+if (!sessionId) {
+  errorMessage = 'No se encontró una sesión de pago válida.';
+} else {
+  try {
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    if (session.payment_status === 'paid') {
+      const clienteId = session.metadata?.userId;
+      
+      // Obtenemos el payment_intent (puede venir como string o como objeto expandido)
+      const paymentIntentId = typeof session.payment_intent === 'string' 
+        ? session.payment_intent 
+        : session.payment_intent?.id;
+
+      if (clienteId && paymentIntentId) {
+        // Guardamos en la tabla facturas
+        await crearFactura({
+          clienteId,
+          stripePaymentIntentId: paymentIntentId,
+          iva: 21.00 // O el IVA que corresponda a tu tienda
+        });
+        pagoExitoso = true;
+      } else {
+        errorMessage = 'Faltan datos del cliente o del pago de Stripe.';
+      }
+    } else {
+      errorMessage = 'El pago no se ha completado correctamente.';
+    }
+  } catch (error: any) {
+    console.error('Error al procesar el éxito del pago:', error);
+    errorMessage = 'Hubo un error al verificar la sesión de pago.';
+  }
+}
+---
+
+<LayoutBase>
+  <div class="container mx-auto px-4 py-16 max-w-xl text-center">
+    
+    {pagoExitoso ? (
+      <div class="bg-white p-8 rounded-lg shadow-md border border-gray-200">
+        <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+          ✓
+        </div>
+        <h1 class="text-3xl font-bold mb-2 text-gray-900">¡Compra exitosa!</h1>
+        <p class="text-gray-600 mb-6">
+          Muchas gracias por tu compra. Tu pedido se ha registrado correctamente en nuestro sistema.
+        </p>
+        <a 
+          href="/" 
+          class="inline-block bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors font-medium">
+          Volver al inicio
+        </a>
+      </div>
+    ) : (
+      <div class="bg-white p-8 rounded-lg shadow-md border border-gray-200">
+        <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+          ✕
+        </div>
+        <h1 class="text-3xl font-bold mb-2 text-gray-900">Algo salió mal</h1>
+        <p class="text-gray-600 mb-6">{errorMessage}</p>
+        <a 
+          href="/carrito" 
+          class="inline-block bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors font-medium">
+          Volver al carrito
+        </a>
+      </div>
+    )}
+
+  </div>
+</LayoutBase>
+
+<!-- 5. Script en el cliente para vaciar el localStorage de la cesta -->
+<script define:vars={{ pagoExitoso }}>
+  if (pagoExitoso) {
+    // Limpiamos el carrito del navegador
+    localStorage.removeItem("cesta");
+    // Avisamos a la app que la cesta cambió (por si hay globos contadores en el header)
+    window.dispatchEvent(new Event("cestaUpdated"));
+    console.log("Cesta vaciada con éxito tras el pago.");
+  }
+</script>

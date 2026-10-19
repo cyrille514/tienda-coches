@@ -1,11 +1,12 @@
 ---
 import LayoutBase from '../layouts/LayoutBase.astro';
+import { BUCKET } from '../config';
 ---
 
 <LayoutBase title="Inicio - Tienda de Coches">
   <div class="overflow-hidden rounded-lg">
     <img 
-      src="/vehiculos/showroom-coches.jpg" 
+      src={`${BUCKET}showroom-coches.jpg`} 
       alt="Showroom de Coches" 
       class="w-full h-[350px] object-cover"
     />
@@ -32,5 +33,3 @@ import LayoutBase from '../layouts/LayoutBase.astro';
     </div>
   </div>
 </LayoutBase>
-
-
