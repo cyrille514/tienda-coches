@@ -94,7 +94,6 @@ import { BUCKET } from '../config';
     if (contenedor) {
       contenedor.innerHTML = cesta.map(item => {
         let cantidad = item.cantidad || 1;
-        // Soporta tanto si el producto está anidado (item.producto) como si está plano (item)
         let pActual = item.producto || item;
         
         let codigoProducto = pActual.pk_producto;
@@ -102,7 +101,15 @@ import { BUCKET } from '../config';
 
         let precioUnitario = parseFloat(pActual.precio) || 0;
         let subtotal = precioUnitario * cantidad;
-        let imagenProducto = pActual.url_imagen ? `${BUCKET}${pActual.url_imagen}` : "/icons/no-image.png";
+
+        // --- CORRECCIÓN DE LA RUTA DE LA IMAGEN ---
+        let cleanPath = pActual.url_imagen ? pActual.url_imagen.trim() : "";
+        if (cleanPath && !cleanPath.startsWith("/")) {
+          cleanPath = "/" + cleanPath;
+        }
+        let imagenProducto = cleanPath ? `${BUCKET.replace(/\/$/, "")}${cleanPath}` : "/icons/no-image.png";
+        // ------------------------------------------
+
         totalAcumulado += subtotal;
 
         return `
@@ -198,4 +205,3 @@ import { BUCKET } from '../config';
     }
   }); 
 </script>
-
