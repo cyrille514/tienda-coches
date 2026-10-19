@@ -1,11 +1,7 @@
 ---
-// src/pages/carrito.astro
 import "../styles/global.css";
 import LayoutBase from "../layouts/LayoutBase.astro";
 import { BUCKET } from '../config';
-// BUCKET es la URL base del bucket de imágenes, definida en config.ts
-// como una constante exportada. 
-// La utilizo para construir la URL de las imágenes de los productos.
 ---
 
 <LayoutBase>
@@ -46,34 +42,31 @@ import { BUCKET } from '../config';
 <script define:vars={{ BUCKET }}>
   console.log("BUCKET:", BUCKET);
 
-  // 1. Obtener elementos del DOM
   const contenedor = document.getElementById("contenedor-cesta");
   const mensajeVacio = document.getElementById("cesta-vacia");
   const resumen = document.getElementById("resumen-cesta");
   const totalPrecioEl = document.getElementById("total-precio");
 
-  // 2. Función para leer localStorage
   const obtenerCesta = () => {
     return JSON.parse(localStorage.getItem("cesta") || "[]");
   };
 
-  // 3. Función para guardar localStorage y actualizar vista
   const guardarCesta = (nuevaCesta) => {
     localStorage.setItem("cesta", JSON.stringify(nuevaCesta));
-    // Notifica al header/globito
     window.dispatchEvent(new Event("cestaUpdated")); 
     renderizarCesta();
   };
 
-  // 4. Modificar cantidad (+ / -)
   window.cambiarCantidad = (idProducto, cambio) => {
     let cesta = obtenerCesta();
-    const index = cesta.findIndex(item => item.producto.pk_producto === idProducto);
+    const index = cesta.findIndex(item => {
+      const pId = item.producto?.pk_producto ?? item.pk_producto;
+      return pId === idProducto;
+    });
 
     if (index !== -1) {
       cesta[index].cantidad = (cesta[index].cantidad || 1) + cambio;
 
-      // Si la cantidad llega a 0, eliminar el producto
       if (cesta[index].cantidad <= 0) {
         cesta.splice(index, 1);
       }
@@ -82,7 +75,6 @@ import { BUCKET } from '../config';
     }
   };
 
-  // 5. Renderizar los productos en HTML
   const renderizarCesta = () => {
     const cesta = obtenerCesta();
     console.log("Cesta actual (desde carrito):", cesta);
@@ -100,11 +92,13 @@ import { BUCKET } from '../config';
     let totalAcumulado = 0;
 
     if (contenedor) {
-      contenedor.innerHTML = cesta.map(prod => {
-        let cantidad = prod.cantidad || 1;
-        let pActual = prod.producto;
+      contenedor.innerHTML = cesta.map(item => {
+        let cantidad = item.cantidad || 1;
+        // Soporta tanto si el producto está anidado (item.producto) como si está plano (item)
+        let pActual = item.producto || item;
+        
         let codigoProducto = pActual.pk_producto;
-        let nombreProducto = pActual.nombre_producto;
+        let nombreProducto = pActual.nombre_producto || pActual.nombre || "Producto";
 
         let precioUnitario = parseFloat(pActual.precio) || 0;
         let subtotal = precioUnitario * cantidad;
@@ -112,8 +106,7 @@ import { BUCKET } from '../config';
         totalAcumulado += subtotal;
 
         return `
-          <div class="flex items-center justify-between border-b pb-4 bg-white p-4 rounded-lg shadow-sm">
-            <!-- Imagen e Información -->
+          <div class="flex items-center justify-between border-b pb-4 bg-white p-4 rounded-lg shadow-sm text-black">
             <div class="flex items-center space-x-4 gap-8">
               <img width="100" height="100"
                 class="object-cover rounded-md border"
@@ -126,7 +119,6 @@ import { BUCKET } from '../config';
               </div>
             </div>
 
-            <!-- Controles de Cantidad (+ / -) -->
             <div class="flex items-center space-x-3">
               <span class="text-sm font-medium">Cantidad:</span>
               <div class="flex items-center bg-[#f4ece1] rounded-lg border border-gray-200 overflow-hidden">
@@ -146,7 +138,6 @@ import { BUCKET } from '../config';
               </div>
             </div>
 
-            <!-- Subtotal del Producto -->
             <div class="text-right min-w-[5rem]">
               <p class="font-bold text-lg text-gray-900">
                 € ${subtotal.toFixed(2)}</p>
@@ -163,10 +154,8 @@ import { BUCKET } from '../config';
     window.dispatchEvent(new Event("cestaUpdated"));
   };
 
-  // 6. Cargar al inicio
   renderizarCesta();
 
-  // 7. Manejar el proceso de pago con Stripe
   const btnPagar = document.getElementById("btn-pagar");
 
   btnPagar?.addEventListener("click", async () => {
@@ -207,5 +196,6 @@ import { BUCKET } from '../config';
       btnPagar.textContent = "Efectuar la compra";
       btnPagar.removeAttribute("disabled");
     }
-  });  
+  }); 
 </script>
+
