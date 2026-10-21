@@ -1,9 +1,9 @@
-//src/pages/api/crear-checkout.ts
+// src/pages/api/crear-checkout.ts
 
 import type { APIRoute } from 'astro';
 import { supabase } from '../../lib/supabase'; 
-// Ajusta la ruta según la ubicación de tu archivo lib/supabase
 import Stripe from 'stripe';
+import { BUCKET } from '../../config';
 
 const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY);
 
@@ -44,17 +44,32 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     }
 
-    // 4. Mapeamos los productos para Stripe
-    const lineItems = items.map((item: any) => ({
-      price_data: {
-        currency: 'eur',
-        product_data: {
-          name: item.producto.nombre_producto,
+    // 4. Mapeamos los productos para Stripe con normalización robusta (soporta estructura anidada o plana)
+    const lineItems = items.map((item: any) => {
+      const producto = item.producto || item;
+      
+      const nombre = producto.nombre_producto || producto.nombre || "Producto";
+      const precio = parseFloat(producto.precio) || 0;
+      const cantidad = item.cantidad || 1;
+      
+      let cleanPath = producto.url_imagen ? producto.url_imagen.trim() : "";
+      if (cleanPath && !cleanPath.startsWith("/")) {
+        cleanPath = "/" + cleanPath;
+      }
+      const imagen = cleanPath ? `${BUCKET.replace(/\/$/, "")}${cleanPath}` : undefined;
+
+      return {
+        price_data: {
+          currency: 'eur',
+          product_data: {
+            name: nombre,
+            images: imagen ? [imagen] : [],
+          },
+          unit_amount: Math.round(precio * 100), // Stripe usa céntimos
         },
-        unit_amount: Math.round(parseFloat(item.producto.precio) * 100), // Stripe usa céntimos
-      },
-      quantity: item.cantidad || 1,
-    }));
+        quantity: cantidad,
+      };
+    });
 
     // 5. Creamos la sesión de Stripe Checkout incluyendo el ID del usuario en los metadata
     const session = await stripe.checkout.sessions.create({
