@@ -2,6 +2,7 @@
 import "../styles/global.css";
 import LayoutBase from "../layouts/LayoutBase.astro";
 import { crearFactura } from '../lib/facturas'; // Función para guardar la factura
+import { enviarEmailFactura } from '../lib/brevo'; // Función para enviar email con Brevo
 import Stripe from 'stripe';
 
 const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY);
@@ -9,6 +10,7 @@ const sessionId = Astro.url.searchParams.get('session_id');
 
 let pagoExitoso = false;
 let errorMessage = '';
+let facturaId: number | null = null;
 
 if (!sessionId) {
   errorMessage = 'No se encontró una sesión de pago válida.';
@@ -25,13 +27,29 @@ if (!sessionId) {
         : session.payment_intent?.id;
 
       if (clienteId && paymentIntentId) {
-        // Guardamos en la tabla facturas
-        await crearFactura({
+        // 1. Guardamos en la tabla facturas
+        const nuevaFactura = await crearFactura({
           clienteId,
           stripePaymentIntentId: paymentIntentId,
           iva: 21.00 // O el IVA que corresponda a tu tienda
         });
+
+        facturaId = nuevaFactura.pk_factura;
         pagoExitoso = true;
+
+        // 2. Enviar correo electrónico de confirmación con Brevo
+        const emailCliente = session.customer_details?.email;
+        const nombreCliente = session.customer_details?.name || 'Cliente';
+        const total = (session.amount_total || 0) / 100;
+
+        if (emailCliente && facturaId) {
+          await enviarEmailFactura({
+            emailCliente,
+            nombreCliente,
+            facturaId,
+            total
+          });
+        }
       } else {
         errorMessage = 'Faltan datos del cliente o del pago de Stripe.';
       }
@@ -55,13 +73,25 @@ if (!sessionId) {
         </div>
         <h1 class="text-3xl font-bold mb-2 text-gray-900">¡Compra exitosa!</h1>
         <p class="text-gray-600 mb-6">
-          Muchas gracias por tu compra. Tu pedido se ha registrado correctamente en nuestro sistema.
+          Muchas gracias por tu compra. Tu pedido se ha registrado correctamente en nuestro sistema y hemos enviado un correo de confirmación.
         </p>
-        <a 
-          href="/" 
-          class="inline-block bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors font-medium">
-          Volver al inicio
-        </a>
+
+        <!-- Botones de Acción -->
+        <div class="flex flex-col sm:flex-row gap-3 justify-center items-center">
+          {facturaId && (
+            <a 
+              href={`/factura/${facturaId}`} 
+              target="_blank"
+              class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+              🖨️ Ver e Imprimir Factura
+            </a>
+          )}
+          <a 
+            href="/" 
+            class="w-full sm:w-auto inline-block bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors font-medium">
+            Volver al inicio
+          </a>
+        </div>
       </div>
     ) : (
       <div class="bg-white p-8 rounded-lg shadow-md border border-gray-200">
@@ -81,7 +111,7 @@ if (!sessionId) {
   </div>
 </LayoutBase>
 
-<!-- 5. Script en el cliente para vaciar el localStorage de la cesta -->
+<!-- Script en el cliente para vaciar el localStorage de la cesta -->
 <script define:vars={{ pagoExitoso }}>
   if (pagoExitoso) {
     // Limpiamos el carrito del navegador
