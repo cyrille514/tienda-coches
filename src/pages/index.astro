@@ -1,35 +1,129 @@
 ---
+// src/pages/index.astro
 import LayoutBase from '../layouts/LayoutBase.astro';
 import { BUCKET } from '../config';
 ---
 
-<LayoutBase title="Inicio - Tienda de Coches">
-  <div class="overflow-hidden rounded-lg">
-    <img 
-      src={`${BUCKET}showroom-coches.jpg`} 
-      alt="Showroom de Coches" 
-      class="w-full h-[350px] object-cover"
-    />
-  </div>
-
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-5">
-    <div class="overflow-hidden rounded-lg">
-      <iframe 
-        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2993.250550505!2d2.155!3d41.391!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDHCsDIzJzI3LjYiTiAywrAwOScxOC4wIkU!5e0!3m2!1ses!2ses!4v1600000000000" 
-        class="w-full h-[150px] border-0 rounded-lg" 
-        allowfullscreen="" 
-        loading="lazy">
-      </iframe>
+<LayoutBase title="Inicio - Tienda de Coches | Exclusive Motors">
+  <div class="flex flex-col gap-4">
+    
+    <!-- Image Showroom Principale -->
+    <div class="relative overflow-hidden rounded-2xl border border-slate-800/80 shadow-lg group">
+      <img 
+        src={`${BUCKET}showroom-coches.jpg`} 
+        alt="Showroom de Coches" 
+        class="w-full h-[220px] sm:h-[260px] object-cover group-hover:scale-105 transition-transform duration-500"
+        onerror="this.src='https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=1200&auto=format&fit=crop';"
+      />
+      <div class="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent flex items-end p-5">
+        <div>
+          <h1 class="text-xl font-bold text-white leading-tight">Showroom Exclusivo</h1>
+          <p class="text-xs sm:text-sm text-slate-300">Descubre nuestra selección de vehículos de alta gama en Barcelona.</p>
+        </div>
+      </div>
     </div>
 
-    <div class="bg-white p-4 rounded-lg text-center flex flex-col justify-center items-center shadow-sm">
-      <h4 class="font-bold text-blue-600 text-sm">SUSCRÍBETE A LA NEWSLETTER</h4>
-      <p class="text-xs text-black font-bold mt-1 mb-3">Y llévate un ticket regalo para usar en nuestro showroom</p>
-      <form class="w-full">
-        <button type="submit" class="bg-black text-white px-5 py-2 rounded-md hover:bg-gray-800 transition-colors text-sm w-full sm:w-auto">
-          Suscríbete ahora
-        </button>
-      </form>
+    <!-- Grille inférieure compacte : Carte & Newsletter -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      
+      <!-- Bloc Carte Google Maps Compact -->
+      <div class="glass-panel p-3.5 rounded-2xl border border-slate-800/80 shadow-md flex flex-col justify-between">
+        <div class="flex items-center gap-2 text-emerald-400 text-[11px] font-bold uppercase tracking-wider mb-2">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Ubicación del Showroom
+        </div>
+        <div class="w-full h-[120px] rounded-xl overflow-hidden border border-slate-800">
+          <iframe 
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2993.250550505!2d2.155!3d41.391!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDHCsDIzJzI3LjYiTiAywrAwOScxOC4wIkU!5e0!3m2!1ses!2ses!4v1600000000000" 
+            class="w-full h-full border-0" 
+            allowfullscreen="" 
+            loading="lazy">
+          </iframe>
+        </div>
+      </div>
+
+      <!-- Bloc Newsletter Fonctionnel Supabase -->
+      <div class="glass-panel p-4 rounded-2xl border border-slate-800/80 flex flex-col justify-center items-center text-center shadow-md">
+        <div class="flex items-center gap-2 mb-1">
+          <div class="w-7 h-7 rounded-full bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a20.02 20.02 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <h4 class="font-bold text-blue-400 text-xs tracking-wide uppercase">NEWSLETTER</h4>
+        </div>
+        <p class="text-[11px] text-slate-300 mb-3">
+          Llévate un ticket regalo para usar en nuestro showroom.
+        </p>
+        
+        <form id="newsletter-form" class="w-full max-w-xs space-y-2">
+          <input 
+            type="email" 
+            id="newsletter-email"
+            placeholder="Tu correo electrónico" 
+            class="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-100 text-xs focus:outline-none focus:border-blue-500"
+            required
+          />
+          <button type="submit" id="newsletter-btn" class="w-full bg-blue-600 text-white font-medium py-1.5 px-4 rounded-lg hover:bg-blue-700 transition-colors text-xs shadow-md cursor-pointer">
+            Suscríbete ahora
+          </button>
+        </form>
+        <p id="newsletter-msg" class="text-[10px] mt-2 hidden"></p>
+      </div>
+
     </div>
+
   </div>
 </LayoutBase>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  const form = document.getElementById('newsletter-form') as HTMLFormElement;
+  const emailInput = document.getElementById('newsletter-email') as HTMLInputElement;
+  const msgEl = document.getElementById('newsletter-msg');
+  const btn = document.getElementById('newsletter-btn') as HTMLButtonElement;
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = emailInput.value.trim();
+      if (!email) return;
+
+      if (btn) {
+        btn.textContent = 'Enviando...';
+        btn.setAttribute('disabled', 'true');
+      }
+
+      try {
+        const { error } = await supabase
+          .from('suscriptores')
+          .insert([{ email }]);
+
+        if (error) {
+          if (error.code === '23505') {
+            throw new Error('Este correo ya está registrado.');
+          }
+          throw new Error('Ocurrió un error al registrarse.');
+        }
+
+        if (msgEl) {
+          msgEl.textContent = '¡Gracias por suscribirte!';
+          msgEl.className = 'text-[10px] mt-2 text-emerald-400 font-medium';
+          msgEl.classList.remove('hidden');
+        }
+        form.reset();
+      } catch (err: any) {
+        if (msgEl) {
+          msgEl.textContent = err.message || 'Error de conexión.';
+          msgEl.className = 'text-[10px] mt-2 text-red-400 font-medium';
+          msgEl.classList.remove('hidden');
+        }
+      } finally {
+        if (btn) {
+          btn.textContent = 'Suscríbete ahora';
+          btn.removeAttribute('disabled');
+        }
+      }
+    });
+  }
+</script>

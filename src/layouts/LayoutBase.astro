@@ -13,7 +13,6 @@ interface Props {
 
 const { title = "Tienda de Coches | Exclusive Motors", categoriaActivaId } = Astro.props;
 
-// Gestion de session serveur
 const accessToken = Astro.cookies.get('sb-access-token');
 const refreshToken = Astro.cookies.get('sb-refresh-token');
 
@@ -39,37 +38,35 @@ if (accessToken && refreshToken) {
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col antialiased">
 
-  <!-- En-tête -->
   <Nav />
 
-  <!-- Contenu Principal -->
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 w-full flex-1">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 w-full flex-1">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
       
-      <!-- Sidebar -->
-      <aside class="lg:col-span-3 space-y-4 sm:space-y-6">
-        <div class="glass-panel p-4 sm:p-5 rounded-2xl">
+      <!-- Sidebar Compacte -->
+      <aside class="lg:col-span-3 space-y-3">
+        <div class="glass-panel p-3 rounded-2xl">
           <MenuCategorias categoriaActivaId={categoriaActivaId} />
         </div>
-        <div class="glass-panel p-4 rounded-2xl text-xs text-green-500 flex justify-around">
-          <a href="#" class="hover:text-blue-600 transition-colors">Instagram</a>
-          <a href="#" class="hover:text-blue-600 transition-colors">LinkedIn</a>
-          <a href="#" class="hover:text-blue-600 transition-colors">Facebook</a>
+        <div class="glass-panel p-2.5 rounded-2xl text-[11px] text-emerald-400 flex justify-around">
+          <a href="#" class="hover:text-blue-400 transition-colors">Instagram</a>
+          <a href="#" class="hover:text-blue-400 transition-colors">LinkedIn</a>
+          <a href="#" class="hover:text-blue-400 transition-colors">Facebook</a>
         </div>
-        <div class="glass-panel p-4 sm:p-5 rounded-2xl space-y-3">
-          <div class="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider">
-            <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Dónde estamos
+        <div class="glass-panel p-3 rounded-2xl space-y-1.5">
+          <div class="flex items-center gap-2 text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Dónde estamos
           </div>
-          <p class="text-xs text-slate-300 leading-relaxed">
+          <p class="text-[11px] text-slate-300 leading-relaxed">
             Visita nuestro showroom exclusivo en el número 114 de la calle Balmes, Barcelona.
           </p>
-          <a href="mailto:hola@tiendacoches.com" class="text-xs font-semibold text-blue-400 hover:underline block pt-1">
+          <a href="mailto:hola@tiendacoches.com" class="text-[11px] font-semibold text-blue-400 hover:underline block">
             hola@tiendacoches.com
           </a>
         </div>
       </aside>
 
-      <!-- Vue dynamique -->
+      <!-- Vue principale -->
       <main class="lg:col-span-9 w-full">
         <slot />
       </main>
@@ -77,27 +74,38 @@ if (accessToken && refreshToken) {
     </div>
   </div>
 
-  <!-- Footer -->
-  <footer class="border-t border-slate-800/80 glass-panel mt-auto py-6">
-    <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500">
+  <footer class="border-t border-slate-800/80 glass-panel mt-auto py-2.5">
+    <div class="max-w-7xl mx-auto px-4 text-center text-[10px] text-slate-500">
       © 2026 LuxeMotors - Tienda de Coches. Todos los derechos reservados.
     </div>
   </footer>
 
-  <!-- Modale d'authentification (si non connecté) -->
   {!user && <AuthModal />}
 
-  <!-- Script global utilitaire (ex: panier) -->
   <script is:inline>
-    document.addEventListener('DOMContentLoaded', () => {
-      const cart = JSON.parse(localStorage.getItem('tienda_coches_carrito') || '[]');
-      const totalItems = cart.reduce((sum, item) => sum + item.cantidad, 0);
-      const badge = document.getElementById('cart-badge');
-      if (badge && totalItems > 0) {
-        badge.textContent = totalItems;
-        badge.classList.remove('hidden');
+    const updateCartBadge = () => {
+      const badge = document.getElementById("cart-badge");
+      if (!badge) return;
+
+      try {
+        const rawCesta = localStorage.getItem("cesta") || localStorage.getItem("tienda_coches_carrito") || "[]";
+        const cesta = JSON.parse(rawCesta);
+        const totalItems = cesta.reduce((acc, item) => acc + (item.cantidad || 1), 0);
+
+        if (totalItems > 0) {
+          badge.textContent = totalItems;
+          badge.classList.remove("hidden");
+        } else {
+          badge.classList.add("hidden");
+        }
+      } catch (error) {
+        console.error("Erreur badge panier :", error);
       }
-    });
+    };
+
+    document.addEventListener("DOMContentLoaded", updateCartBadge);
+    window.addEventListener("cestaUpdated", updateCartBadge);
+    window.addEventListener("storage", updateCartBadge);
   </script>
 </body>
 </html>
