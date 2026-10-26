@@ -40,7 +40,7 @@ import { BUCKET } from '../config';
 </LayoutBase>
 
 <script define:vars={{ BUCKET }}>
-  console.log("BUCKET:", BUCKET);
+  console.log("BUCKET configurado:", BUCKET);
 
   const contenedor = document.getElementById("contenedor-cesta");
   const mensajeVacio = document.getElementById("cesta-vacia");
@@ -102,24 +102,43 @@ import { BUCKET } from '../config';
         let precioUnitario = parseFloat(pActual.precio) || 0;
         let subtotal = precioUnitario * cantidad;
 
-        // --- CORRECCIÓN DE LA RUTA DE LA IMAGEN ---
-        let cleanPath = pActual.url_imagen ? pActual.url_imagen.trim() : "";
-        if (cleanPath && !cleanPath.startsWith("/")) {
-          cleanPath = "/" + cleanPath;
+        // --- GESTION CORRIGÉE ET SANS DOUBLON DE L'IMAGE ---
+        let rawImg = pActual.url_imagen || pActual.imagen || "";
+        let imagenProducto = "";
+
+        if (rawImg.startsWith("http://") || rawImg.startsWith("https://")) {
+          imagenProducto = rawImg;
+        } else if (rawImg) {
+          let cleanPath = rawImg.startsWith("/") ? rawImg : "/" + rawImg;
+          const formattedBucket = BUCKET ? BUCKET.replace(/\/$/, "") : "";
+          
+          // Évite le doublon si le bucket et le chemin contiennent tous les deux "vehiculos"
+          if (formattedBucket.endsWith("/vehiculos") && cleanPath.startsWith("/vehiculos/")) {
+            cleanPath = cleanPath.replace("/vehiculos", "");
+          }
+
+          imagenProducto = formattedBucket ? `${formattedBucket}${cleanPath}` : cleanPath;
         }
-        let imagenProducto = cleanPath ? `${BUCKET.replace(/\/$/, "")}${cleanPath}` : "/icons/no-image.png";
-        // ------------------------------------------
+        // --------------------------------------------------
 
         totalAcumulado += subtotal;
 
         return `
           <div class="flex items-center justify-between border-b pb-4 bg-white p-4 rounded-lg shadow-sm text-black">
             <div class="flex items-center space-x-4 gap-8">
-              <img width="100" height="100"
-                class="object-cover rounded-md border"
-                src="${imagenProducto}" 
-                alt="${nombreProducto}" 
-              />
+              <!-- Contenedor seguro con emoji de respaldo si falla la imagen -->
+              <div class="w-[100px] h-[100px] flex-shrink-0 bg-gray-100 rounded-md border flex items-center justify-center overflow-hidden">
+                ${imagenProducto ? `
+                  <img 
+                    src="${imagenProducto}" 
+                    alt="${nombreProducto}" 
+                    class="w-full h-full object-cover"
+                    onerror="this.parentElement.innerHTML='<span class=\'text-3xl\'>🚗</span>';"
+                  />
+                ` : `
+                  <span class="text-3xl">🚗</span>
+                `}
+              </div>
               <div>
                 <h3 class="font-semibold text-lg">${nombreProducto}</h3>
                 <p class="text-sm text-gray-500">€${precioUnitario.toFixed(2)} c/u</p>
