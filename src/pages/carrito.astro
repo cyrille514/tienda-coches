@@ -76,7 +76,6 @@ import { BUCKET } from '../config';
     let total = 0;
 
     container.innerHTML = cesta.map((item, index) => {
-      // Compatibilité avec la structure lue par crear-checkout.ts
       const prod = item.producto || item;
       const precio = Number(prod.precio) || Number(prod.precio_producto) || Number(prod.price) || 0;
       const cantidad = item.cantidad || 1;
@@ -85,7 +84,8 @@ import { BUCKET } from '../config';
 
       const nombreProducto = prod.nombre || prod.nombre_producto || prod.modelo || prod.title || prod.titulo || prod.marca || "Vehículo Exclusivo";
 
-      let imagenNombre = prod.url_imagen || prod.imagen || prod.foto || prod.img || "";
+      // Recherche exhaustive de l'image parmi toutes les clés possibles de l'objet
+      let imagenNombre = prod.url_imagen || prod.imagen_url || prod.imagen || prod.foto || prod.img || prod.image || prod.path || "";
       let imagenFinal = "";
 
       if (imagenNombre.startsWith("http")) {
@@ -167,7 +167,7 @@ import { BUCKET } from '../config';
     saveAndNotify(cesta);
   };
 
-  // Appel de l'API /api/crear-checkout correspondante à votre fichier backend
+  // Appel de l'API Stripe
   document.addEventListener("DOMContentLoaded", () => {
     renderCart();
 
@@ -181,7 +181,6 @@ import { BUCKET } from '../config';
           btnCheckout.textContent = "Redirigiendo a Stripe...";
           btnCheckout.disabled = true;
 
-          // CORRECTION ICI : Appel vers /api/crear-checkout (au lieu de create-checkout-session)
           const response = await fetch("/api/crear-checkout", {
             method: "POST",
             headers: {
@@ -209,3 +208,4 @@ import { BUCKET } from '../config';
     }
   });
 </script>
+
