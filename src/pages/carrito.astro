@@ -25,7 +25,7 @@ import { BUCKET } from '../config';
         type="button"
         class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all shadow-lg shadow-blue-600/20 text-sm cursor-pointer"
       >
-        Efectuar la compra
+        Efectuar la compra avec Stripe
       </button>
     </div>
   </div>
@@ -81,8 +81,8 @@ import { BUCKET } from '../config';
       const subtotal = precio * cantidad;
       total += subtotal;
 
-      // Détection élargie pour récupérer le vrai nom du véhicule (Volvo, modèle, etc.)
-      const nombreProducto = item.nombre || item.nom_producto || item.titulo || item.title || item.modelo || item.marca || "Vehículo Exclusivo";
+      // Récupération précise du nom du véhicule selon la structure stockée
+      const nombreProducto = item.nombre || item.nom_producto || item.modelo || item.title || item.titulo || item.marca || "Véhicule Sélectionné";
 
       let imagenNombre = item.imagen_url || item.imagen || item.foto || item.img || "";
       let imagenFinal = "";
@@ -166,23 +166,44 @@ import { BUCKET } from '../config';
     saveAndNotify(cesta);
   };
 
-  // Gestion du bouton d'achat "Efectuar la compra"
+  // Intégration de l'appel de paiement Stripe au clic sur le bouton
   document.addEventListener("DOMContentLoaded", () => {
     renderCart();
 
     const btnCheckout = document.getElementById("btn-checkout");
     if (btnCheckout) {
-      btnCheckout.addEventListener("click", () => {
+      btnCheckout.addEventListener("click", async () => {
         const cesta = getCart();
         if (cesta.length === 0) return;
 
-        alert("¡Compra efectuada con éxito! Gracias por tu pedido en TiendaCoches.");
-        
-        // Vider le panier après l'achat
-        localStorage.removeItem("cesta");
-        localStorage.removeItem("tienda_coches_carrito");
-        window.dispatchEvent(new Event("cestaUpdated"));
-        renderCart();
+        try {
+          btnCheckout.textContent = "Redirigiendo a Stripe...";
+          btnCheckout.disabled = true;
+
+          // Appel vers votre endpoint backend/API de création de session Stripe
+          const response = await fetch("/api/create-checkout-session", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ items: cesta }),
+          });
+
+          const data = await response.json();
+
+          if (data.url) {
+            window.location.href = data.url; // Redirection vers la page de paiement Stripe
+          } else {
+            alert("Erreur lors de la création de la session de paiement.");
+            btnCheckout.textContent = "Efectuar la compra avec Stripe";
+            btnCheckout.disabled = false;
+          }
+        } catch (error) {
+          console.error("Erreur Stripe:", error);
+          alert("Une erreur est survenue lors de la connexion à Stripe.");
+          btnCheckout.textContent = "Efectuar la compra avec Stripe";
+          btnCheckout.disabled = false;
+        }
       });
     }
   });
