@@ -1,226 +1,172 @@
 ---
-import "../styles/global.css";
-import LayoutBase from "../layouts/LayoutBase.astro";
+// src/pages/carrito.astro
+import LayoutBase from '../layouts/LayoutBase.astro';
 import { BUCKET } from '../config';
 ---
 
-<LayoutBase>
-<div class="container mx-auto px-4 py-8 max-w-4xl">
-  <h1 class="text-2xl font-bold mb-6 text-center">
-    Tu Cesta de Compras
-  </h1>
+<LayoutBase title="Tu Cesta de Compras | Exclusive Motors">
+  <div class="max-w-4xl mx-auto py-2">
+    <h1 class="text-xl sm:text-2xl font-bold text-white text-center mb-6">Tu Cesta de Compras</h1>
 
-  <!-- Mensaje si la cesta está vacía -->
-  <div id="cesta-vacia" class="text-center py-12 hidden">
-    <p class="text-gray-500 text-lg mb-4">Tu cesta está vacía.</p>
-    <a href="/" class="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors">
-      Ver productos
-    </a>
+    <!-- Zone dynamique du panier (Fond sombre garanti) -->
+    <div id="cart-container" class="space-y-4">
+      <p class="text-slate-400 text-center py-8 text-sm">Cargando tu cesta...</p>
+    </div>
+
+    <!-- Résumé et Total (Fond sombre forcé, plus de blanc) -->
+    <div id="cart-summary" class="mt-6 hidden space-y-4">
+      <div class="bg-slate-900/90 backdrop-blur-md p-4 rounded-2xl border border-slate-800 flex justify-between items-center shadow-lg">
+        <span class="text-sm font-semibold text-slate-300">Total a pagar:</span>
+        <span id="cart-total-price" class="text-lg font-extrabold text-blue-400">€ 0.00</span>
+      </div>
+
+      <button 
+        id="btn-checkout"
+        type="button"
+        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all shadow-lg shadow-blue-600/20 text-sm cursor-pointer"
+      >
+        Efectuar la compra
+      </button>
+    </div>
   </div>
-
-  <!-- Contenedor de la lista de productos -->
-  <div id="contenedor-cesta" class="space-y-4">
-    <!-- Se rellena dinámicamente desde el cliente con JS -->
-  </div>
-
-  <!-- Resumen del Total alineado a la derecha -->
-  <section id="resumen-cesta" class="mt-8 p-4 bg-white rounded-lg shadow-sm border border-black">
-    <p style="text-align: right; padding-right: 15px;" class="text-xl font-bold text-righ rounded-md">
-      Total: <span id="total-precio" class="text-2xl ml-2">€0.00</span>
-    </p>
-  </section>
-
-  <section id="pago">
-    <button id="btn-pagar" class="block w-full text-center bg-black text-white font-medium py-3 px-6 rounded-md hover:bg-gray-800 transition-colors shadow mt-4 cursor-pointer">
-      Efectuar la compra
-    </button>
-  </section>
-
-</div>
 </LayoutBase>
 
-<script define:vars={{ BUCKET }}>
-  console.log("BUCKET configurado:", BUCKET);
+<script is:inline>
+  const BUCKET_URL = "https://aahvngawggsthhubqskx.supabase.co/storage/v1/object/public/coches/";
 
-  const contenedor = document.getElementById("contenedor-cesta");
-  const mensajeVacio = document.getElementById("cesta-vacia");
-  const resumen = document.getElementById("resumen-cesta");
-  const totalPrecioEl = document.getElementById("total-precio");
+  function getCart() {
+    try {
+      const raw = localStorage.getItem("cesta") || localStorage.getItem("tienda_coches_carrito") || "[]";
+      return JSON.parse(raw);
+    } catch (e) {
+      return [];
+    }
+  }
 
-  const obtenerCesta = () => {
-    return JSON.parse(localStorage.getItem("cesta") || "[]");
+  function saveAndNotify(cesta) {
+    const jsonStr = JSON.stringify(cesta);
+    localStorage.setItem("cesta", jsonStr);
+    localStorage.setItem("tienda_coches_carrito", jsonStr);
+    window.dispatchEvent(new Event("cestaUpdated"));
+    renderCart();
+  }
+
+  const renderCart = () => {
+    const container = document.getElementById("cart-container");
+    const summary = document.getElementById("cart-summary");
+    const totalPriceEl = document.getElementById("cart-total-price");
+
+    if (!container) return;
+
+    const cesta = getCart();
+
+    if (cesta.length === 0) {
+      container.innerHTML = `
+        <div class="bg-slate-900/95 p-8 rounded-2xl border border-slate-800 text-center space-y-4 shadow-lg">
+          <p class="text-slate-400 text-sm">Tu cesta está vacía en este momento.</p>
+          <a href="/productos?categoria=1" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2.5 rounded-xl text-xs transition-colors">
+            Explorar vehículos
+          </a>
+        </div>
+      `;
+      if (summary) summary.classList.add("hidden");
+      return;
+    }
+
+    let total = 0;
+
+    container.innerHTML = cesta.map((item, index) => {
+      const precio = Number(item.precio) || Number(item.precio_producto) || 0;
+      const cantidad = item.cantidad || 1;
+      const subtotal = precio * cantidad;
+      total += subtotal;
+
+      const nombreProducto = item.nombre || item.nom_producto || "Vehículo";
+
+      let imagenNombre = item.imagen_url || item.imagen || item.foto || "";
+      let imagenFinal = "";
+
+      if (imagenNombre.startsWith("http")) {
+        imagenFinal = imagenNombre;
+      } else if (imagenNombre) {
+        imagenFinal = `${BUCKET_URL}${imagenNombre}`;
+      } else {
+        imagenFinal = `${BUCKET_URL}showroom-coches.jpg`;
+      }
+
+      return `
+        <!-- Carte article avec un fond sombre explicite (bg-slate-900/90) -->
+        <div class="bg-slate-900/90 backdrop-blur-md p-4 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
+          
+          <!-- Image & Info -->
+          <div class="flex items-center gap-4 w-full sm:w-auto">
+            <div class="w-20 h-16 rounded-xl overflow-hidden bg-slate-950 border border-slate-800 shrink-0">
+              <img src="${imagenFinal}" alt="${nombreProducto}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=500&q=80'" />
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-white">${nombreProducto}</h3>
+              <p class="text-xs text-slate-400 mt-0.5">€ ${precio.toFixed(2)} c/u</p>
+            </div>
+          </div>
+
+          <!-- Controls Quantité & Prix -->
+          <div class="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto">
+            
+            <div class="flex items-center bg-slate-950 rounded-xl border border-slate-800 p-1">
+              <button 
+                type="button"
+                onclick="window.changeQuantity(${index}, -1)"
+                class="w-7 h-7 flex items-center justify-center text-slate-300 hover:bg-slate-800 rounded-lg transition-colors text-xs font-bold cursor-pointer"
+              >-</button>
+              <span class="w-8 text-center text-xs font-bold text-white">${cantidad}</span>
+              <button 
+                type="button"
+                onclick="window.changeQuantity(${index}, 1)"
+                class="w-7 h-7 flex items-center justify-center text-slate-300 hover:bg-slate-800 rounded-lg transition-colors text-xs font-bold cursor-pointer"
+              >+</button>
+            </div>
+
+            <div class="flex items-center gap-4">
+              <span class="text-sm font-extrabold text-blue-400">€ ${subtotal.toFixed(2)}</span>
+              <button 
+                type="button"
+                onclick="window.removeItem(${index})"
+                class="text-slate-500 hover:text-red-400 transition-colors p-1 cursor-pointer"
+                title="Eliminar producto"
+              >
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    if (totalPriceEl) totalPriceEl.textContent = `€ ${total.toFixed(2)}`;
+    if (summary) summary.classList.remove("hidden");
   };
 
-  const guardarCesta = (nuevaCesta) => {
-    localStorage.setItem("cesta", JSON.stringify(nuevaCesta));
-    window.dispatchEvent(new Event("cestaUpdated")); 
-    renderizarCesta();
-  };
+  window.changeQuantity = function(index, delta) {
+    let cesta = getCart();
 
-  window.cambiarCantidad = (idProducto, cambio) => {
-    let cesta = obtenerCesta();
-    const index = cesta.findIndex(item => {
-      const pId = item.producto?.pk_producto ?? item.pk_producto;
-      return pId === idProducto;
-    });
-
-    if (index !== -1) {
-      cesta[index].cantidad = (cesta[index].cantidad || 1) + cambio;
-
+    if (cesta[index]) {
+      cesta[index].cantidad = (cesta[index].cantidad || 1) + delta;
       if (cesta[index].cantidad <= 0) {
         cesta.splice(index, 1);
       }
-
-      guardarCesta(cesta);
     }
+
+    saveAndNotify(cesta);
   };
 
-  const renderizarCesta = () => {
-    const cesta = obtenerCesta();
-    console.log("Cesta actual (desde carrito):", cesta);
-
-    if (cesta.length === 0) {
-      if (contenedor) contenedor.innerHTML = "";
-      mensajeVacio?.classList.remove("hidden");
-      resumen?.classList.add("hidden");
-      return;
-    }
-
-    mensajeVacio?.classList.add("hidden");
-    resumen?.classList.remove("hidden");
-
-    let totalAcumulado = 0;
-
-    if (contenedor) {
-      contenedor.innerHTML = cesta.map(item => {
-        let cantidad = item.cantidad || 1;
-        let pActual = item.producto || item;
-        
-        let codigoProducto = pActual.pk_producto;
-        let nombreProducto = pActual.nombre_producto || pActual.nombre || "Producto";
-
-        let precioUnitario = parseFloat(pActual.precio) || 0;
-        let subtotal = precioUnitario * cantidad;
-
-        // --- GESTION CORRIGÉE ET SANS DOUBLON DE L'IMAGE ---
-        let rawImg = pActual.url_imagen || pActual.imagen || "";
-        let imagenProducto = "";
-
-        if (rawImg.startsWith("http://") || rawImg.startsWith("https://")) {
-          imagenProducto = rawImg;
-        } else if (rawImg) {
-          let cleanPath = rawImg.startsWith("/") ? rawImg : "/" + rawImg;
-          const formattedBucket = BUCKET ? BUCKET.replace(/\/$/, "") : "";
-          
-          // Évite le doublon si le bucket et le chemin contiennent tous les deux "vehiculos"
-          if (formattedBucket.endsWith("/vehiculos") && cleanPath.startsWith("/vehiculos/")) {
-            cleanPath = cleanPath.replace("/vehiculos", "");
-          }
-
-          imagenProducto = formattedBucket ? `${formattedBucket}${cleanPath}` : cleanPath;
-        }
-        // --------------------------------------------------
-
-        totalAcumulado += subtotal;
-
-        return `
-          <div class="flex items-center justify-between border-b pb-4 bg-white p-4 rounded-lg shadow-sm text-black">
-            <div class="flex items-center space-x-4 gap-8">
-              <!-- Contenedor seguro con emoji de respaldo si falla la imagen -->
-              <div class="w-[100px] h-[100px] flex-shrink-0 bg-gray-100 rounded-md border flex items-center justify-center overflow-hidden">
-                ${imagenProducto ? `
-                  <img 
-                    src="${imagenProducto}" 
-                    alt="${nombreProducto}" 
-                    class="w-full h-full object-cover"
-                    onerror="this.parentElement.innerHTML='<span class=\'text-3xl\'>🚗</span>';"
-                  />
-                ` : `
-                  <span class="text-3xl">🚗</span>
-                `}
-              </div>
-              <div>
-                <h3 class="font-semibold text-lg">${nombreProducto}</h3>
-                <p class="text-sm text-gray-500">€${precioUnitario.toFixed(2)} c/u</p>
-              </div>
-            </div>
-
-            <div class="flex items-center space-x-3">
-              <span class="text-sm font-medium">Cantidad:</span>
-              <div class="flex items-center bg-[#f4ece1] rounded-lg border border-gray-200 overflow-hidden">
-                <button 
-                  onclick="cambiarCantidad(${codigoProducto}, -1)"
-                  class="px-3 py-1 font-bold text-gray-700 hover:bg-[#e8dcce] transition-colors cursor-pointer"
-                  title="Restar uno"
-                >-</button>
-                <span class="px-4 py-1 bg-white font-semibold min-w-[2.5rem] text-center border-x border-gray-200">
-                  ${cantidad}
-                </span>
-                <button 
-                  onclick="cambiarCantidad(${codigoProducto}, 1)"
-                  class="px-3 py-1 font-bold text-gray-700 hover:bg-[#e8dcce] transition-colors cursor-pointer"
-                  title="Sumar uno"
-                >+</button>
-              </div>
-            </div>
-
-            <div class="text-right min-w-[5rem]">
-              <p class="font-bold text-lg text-gray-900">
-                € ${subtotal.toFixed(2)}</p>
-            </div>
-          </div>
-        `;
-      }).join("");
-    }
-
-    if (totalPrecioEl) {
-      totalPrecioEl.textContent = `€ ${totalAcumulado.toFixed(2)}`;
-    }
-
-    window.dispatchEvent(new Event("cestaUpdated"));
+  window.removeItem = function(index) {
+    let cesta = getCart();
+    cesta.splice(index, 1);
+    saveAndNotify(cesta);
   };
 
-  renderizarCesta();
-
-  const btnPagar = document.getElementById("btn-pagar");
-
-  btnPagar?.addEventListener("click", async () => {
-    const cesta = obtenerCesta();
-
-    if (cesta.length === 0) {
-      alert("Tu cesta está vacía.");
-      return;
-    }
-
-    try {
-      btnPagar.textContent = "Redirigiendo a Stripe...";
-      btnPagar.setAttribute("disabled", "true");
-
-      const response = await fetch("/api/crear-checkout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ items: cesta }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Error al crear la sesión de pago");
-      }
-
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error("No se recibió la URL de pago de Stripe.");
-      }
-
-    } catch (error) {
-      console.error("Error en el pago:", error);
-      alert("Hubo un error al procesar el pago: " + error.message);
-      btnPagar.textContent = "Efectuar la compra";
-      btnPagar.removeAttribute("disabled");
-    }
-  }); 
+  document.addEventListener("DOMContentLoaded", renderCart);
 </script>

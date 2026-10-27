@@ -2,7 +2,7 @@
 
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-100 font-sans antialiased selection:bg-blue-600 selection:text-white min-h-screen;
+    @apply bg-gray-300 text-slate-100 font-sans antialiased selection:bg-blue-600 selection:text-white min-h-screen;
   }
 }
 
