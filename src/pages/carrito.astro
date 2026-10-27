@@ -84,15 +84,20 @@ import { BUCKET } from '../config';
 
       const nombreProducto = prod.nombre || prod.nombre_producto || prod.modelo || prod.title || prod.titulo || prod.marca || "Vehículo Exclusivo";
 
-      // Recherche exhaustive de l'image parmi toutes les clés possibles de l'objet
-      let imagenNombre = prod.url_imagen || prod.imagen_url || prod.imagen || prod.foto || prod.img || prod.image || prod.path || "";
+      // Recherche exhaustive de l'image
+      const rawImg = prod.url_imagen || prod.imagen_url || prod.imagen || prod.foto || prod.img || prod.image || prod.path || "";
       let imagenFinal = "";
 
-      if (imagenNombre.startsWith("http")) {
-        imagenFinal = imagenNombre;
-      } else if (imagenNombre) {
-        imagenFinal = `${BUCKET_URL}${imagenNombre.replace(/^\/+/, '')}`;
-      } else {
+      if (rawImg && typeof rawImg === 'string') {
+        const cleanPath = rawImg.trim();
+        if (cleanPath.startsWith('http://') || cleanPath.startsWith('https://')) {
+          imagenFinal = cleanPath;
+        } else if (cleanPath) {
+          imagenFinal = `${BUCKET_URL}${cleanPath.replace(/^\/+/, '')}`;
+        }
+      }
+
+      if (!imagenFinal) {
         imagenFinal = `${BUCKET_URL}showroom-coches.jpg`;
       }
 
@@ -208,4 +213,3 @@ import { BUCKET } from '../config';
     }
   });
 </script>
-

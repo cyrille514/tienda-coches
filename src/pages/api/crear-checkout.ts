@@ -1,5 +1,4 @@
 // src/pages/api/crear-checkout.ts
-
 import type { APIRoute } from 'astro';
 import { supabase } from '../../lib/supabase'; 
 import Stripe from 'stripe';
@@ -9,7 +8,6 @@ const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY);
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
-    // 1. Verificamos la sesión del usuario directamente desde las cookies
     const accessToken = cookies.get('sb-access-token');
     const refreshToken = cookies.get('sb-refresh-token');
 
@@ -25,7 +23,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       }
     }
 
-    // 2. Si no hay usuario autenticado, rechazamos la petición
     if (!userId) {
       return new Response(JSON.stringify({ error: 'No autorizado. Debes iniciar sesión para comprar.' }), {
         status: 401,
@@ -33,7 +30,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     }
 
-    // 3. Leemos los productos que envió el carrito del cliente
     const body = await request.json();
     const items = body.items;
 
@@ -44,27 +40,28 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     }
 
-    // 4. Détermination sécurisée de l'origine pour Vercel et le développement local
     const url = new URL(request.url);
     const origin = request.headers.get('origin') || `${url.protocol}//${url.host}`;
 
-    // 5. Mapeamos los productos para Stripe con normalización robusta de imágenes y URLs
     const lineItems = items.map((item: any) => {
       const producto = item.producto || item;
       
-      const nombre = producto.nombre_producto || producto.nombre || "Producto";
-      const precio = parseFloat(producto.precio) || 0;
+      const nombre = producto.nombre_producto || producto.nombre || producto.modelo || producto.title || producto.titulo || producto.marca || "Producto";
+      const precio = parseFloat(producto.precio || producto.precio_producto || producto.price) || 0;
       const cantidad = item.cantidad || 1;
       
-      // Construction sécurisée et optionnelle de l'image pour éviter l'erreur de URL invalide
-      let imagen = undefined;
-      if (producto.url_imagen) {
-        let cleanPath = producto.url_imagen.trim();
+      // Recherche exhaustive et sécurisée de l'image
+      const rawImg = producto.url_imagen || producto.imagen_url || producto.imagen || producto.foto || producto.img || producto.image || producto.path || "";
+      let imagenFinal = undefined;
+
+      if (rawImg && typeof rawImg === 'string') {
+        const cleanPath = rawImg.trim();
         if (cleanPath.startsWith('http://') || cleanPath.startsWith('https://')) {
-          imagen = cleanPath;
+          imagenFinal = cleanPath;
         } else if (typeof BUCKET !== 'undefined' && BUCKET) {
-          if (!cleanPath.startsWith('/')) cleanPath = '/' + cleanPath;
-          imagen = `${BUCKET.replace(/\/$/, "")}${cleanPath}`;
+          const formattedBucket = BUCKET.replace(/\/$/, "");
+          const formattedPath = cleanPath.startsWith('/') ? cleanPath : '/' + cleanPath;
+          imagenFinal = `${formattedBucket}${formattedPath}`;
         }
       }
 
@@ -72,22 +69,21 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         name: nombre,
       };
 
-      // N'ajoute le tableau des images que si l'URL est valide
-      if (imagen) {
-        productData.images = [imagen];
+      // N'ajoute l'image à Stripe que si c'est une URL absolue valide
+      if (imagenFinal && (imagenFinal.startsWith('http://') || imagenFinal.startsWith('https://'))) {
+        productData.images = [imagenFinal];
       }
 
       return {
         price_data: {
           currency: 'eur',
           product_data: productData,
-          unit_amount: Math.round(precio * 100), // Stripe usa céntimos
+          unit_amount: Math.round(precio * 100),
         },
         quantity: cantidad,
       };
     });
 
-    // 6. Creamos la sesión de Stripe Checkout con URLs absolutas garantizadas
     const session = await stripe.checkout.sessions.create({
       line_items: lineItems,
       mode: 'payment',
@@ -111,5 +107,3 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     });
   }
 };
-
-
