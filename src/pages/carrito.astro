@@ -8,14 +8,14 @@ import { BUCKET } from '../config';
   <div class="max-w-4xl mx-auto py-2">
     <h1 class="text-xl sm:text-2xl font-bold text-white text-center mb-6">Tu Cesta de Compras</h1>
 
-    <!-- Zone dynamique du panier (Fond sombre garanti) -->
+    <!-- Zone dynamique du panier -->
     <div id="cart-container" class="space-y-4">
       <p class="text-slate-400 text-center py-8 text-sm">Cargando tu cesta...</p>
     </div>
 
-    <!-- Résumé et Total (Fond sombre forcé, plus de blanc) -->
+    <!-- Résumé et Total -->
     <div id="cart-summary" class="mt-6 hidden space-y-4">
-      <div class="bg-slate-900/90 backdrop-blur-md p-4 rounded-2xl border border-slate-800 flex justify-between items-center shadow-lg">
+      <div style="background-color: #0f172a !important; border: 1px solid #1e293b !important;" class="p-4 rounded-2xl flex justify-between items-center shadow-lg">
         <span class="text-sm font-semibold text-slate-300">Total a pagar:</span>
         <span id="cart-total-price" class="text-lg font-extrabold text-blue-400">€ 0.00</span>
       </div>
@@ -62,7 +62,7 @@ import { BUCKET } from '../config';
 
     if (cesta.length === 0) {
       container.innerHTML = `
-        <div class="bg-slate-900/95 p-8 rounded-2xl border border-slate-800 text-center space-y-4 shadow-lg">
+        <div style="background-color: #0f172a !important; border: 1px solid #1e293b !important;" class="p-8 rounded-2xl text-center space-y-4 shadow-lg">
           <p class="text-slate-400 text-sm">Tu cesta está vacía en este momento.</p>
           <a href="/productos?categoria=1" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2.5 rounded-xl text-xs transition-colors">
             Explorar vehículos
@@ -76,14 +76,15 @@ import { BUCKET } from '../config';
     let total = 0;
 
     container.innerHTML = cesta.map((item, index) => {
-      const precio = Number(item.precio) || Number(item.precio_producto) || 0;
+      const precio = Number(item.precio) || Number(item.precio_producto) || Number(item.price) || 0;
       const cantidad = item.cantidad || 1;
       const subtotal = precio * cantidad;
       total += subtotal;
 
-      const nombreProducto = item.nombre || item.nom_producto || "Vehículo";
+      // Détection élargie pour récupérer le vrai nom du véhicule (Volvo, modèle, etc.)
+      const nombreProducto = item.nombre || item.nom_producto || item.titulo || item.title || item.modelo || item.marca || "Vehículo Exclusivo";
 
-      let imagenNombre = item.imagen_url || item.imagen || item.foto || "";
+      let imagenNombre = item.imagen_url || item.imagen || item.foto || item.img || "";
       let imagenFinal = "";
 
       if (imagenNombre.startsWith("http")) {
@@ -95,8 +96,7 @@ import { BUCKET } from '../config';
       }
 
       return `
-        <!-- Carte article avec un fond sombre explicite (bg-slate-900/90) -->
-        <div class="bg-slate-900/90 backdrop-blur-md p-4 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
+        <div style="background-color: #0f172a !important; border: 1px solid #1e293b !important;" class="p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
           
           <!-- Image & Info -->
           <div class="flex items-center gap-4 w-full sm:w-auto">
@@ -151,14 +151,12 @@ import { BUCKET } from '../config';
 
   window.changeQuantity = function(index, delta) {
     let cesta = getCart();
-
     if (cesta[index]) {
       cesta[index].cantidad = (cesta[index].cantidad || 1) + delta;
       if (cesta[index].cantidad <= 0) {
         cesta.splice(index, 1);
       }
     }
-
     saveAndNotify(cesta);
   };
 
@@ -168,5 +166,24 @@ import { BUCKET } from '../config';
     saveAndNotify(cesta);
   };
 
-  document.addEventListener("DOMContentLoaded", renderCart);
+  // Gestion du bouton d'achat "Efectuar la compra"
+  document.addEventListener("DOMContentLoaded", () => {
+    renderCart();
+
+    const btnCheckout = document.getElementById("btn-checkout");
+    if (btnCheckout) {
+      btnCheckout.addEventListener("click", () => {
+        const cesta = getCart();
+        if (cesta.length === 0) return;
+
+        alert("¡Compra efectuada con éxito! Gracias por tu pedido en TiendaCoches.");
+        
+        // Vider le panier après l'achat
+        localStorage.removeItem("cesta");
+        localStorage.removeItem("tienda_coches_carrito");
+        window.dispatchEvent(new Event("cestaUpdated"));
+        renderCart();
+      });
+    }
+  });
 </script>
