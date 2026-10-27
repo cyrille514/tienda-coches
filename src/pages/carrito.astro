@@ -76,21 +76,22 @@ import { BUCKET } from '../config';
     let total = 0;
 
     container.innerHTML = cesta.map((item, index) => {
-      const precio = Number(item.precio) || Number(item.precio_producto) || Number(item.price) || 0;
+      // Compatibilité avec la structure lue par crear-checkout.ts
+      const prod = item.producto || item;
+      const precio = Number(prod.precio) || Number(prod.precio_producto) || Number(prod.price) || 0;
       const cantidad = item.cantidad || 1;
       const subtotal = precio * cantidad;
       total += subtotal;
 
-      // Récupération intelligente et élargie du nom exact du véhicule (Volvo, modèle, etc.)
-      const nombreProducto = item.nombre || item.nom_producto || item.modelo || item.title || item.titulo || item.marca || "Vehículo Exclusivo";
+      const nombreProducto = prod.nombre || prod.nombre_producto || prod.modelo || prod.title || prod.titulo || prod.marca || "Vehículo Exclusivo";
 
-      let imagenNombre = item.imagen_url || item.imagen || item.foto || item.img || "";
+      let imagenNombre = prod.url_imagen || prod.imagen || prod.foto || prod.img || "";
       let imagenFinal = "";
 
       if (imagenNombre.startsWith("http")) {
         imagenFinal = imagenNombre;
       } else if (imagenNombre) {
-        imagenFinal = `${BUCKET_URL}${imagenNombre}`;
+        imagenFinal = `${BUCKET_URL}${imagenNombre.replace(/^\/+/, '')}`;
       } else {
         imagenFinal = `${BUCKET_URL}showroom-coches.jpg`;
       }
@@ -166,7 +167,7 @@ import { BUCKET } from '../config';
     saveAndNotify(cesta);
   };
 
-  // Gestion du bouton d'achat Stripe
+  // Appel de l'API /api/crear-checkout correspondante à votre fichier backend
   document.addEventListener("DOMContentLoaded", () => {
     renderCart();
 
@@ -180,7 +181,8 @@ import { BUCKET } from '../config';
           btnCheckout.textContent = "Redirigiendo a Stripe...";
           btnCheckout.disabled = true;
 
-          const response = await fetch("/api/create-checkout-session", {
+          // CORRECTION ICI : Appel vers /api/crear-checkout (au lieu de create-checkout-session)
+          const response = await fetch("/api/crear-checkout", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -190,10 +192,10 @@ import { BUCKET } from '../config';
 
           const data = await response.json();
 
-          if (data.url) {
+          if (response.ok && data.url) {
             window.location.href = data.url;
           } else {
-            alert("Erreur lors de la création de la session de paiement.");
+            alert(data.error || "Erreur lors de la création de la session de paiement.");
             btnCheckout.textContent = "Efectuar la compra con Stripe";
             btnCheckout.disabled = false;
           }
