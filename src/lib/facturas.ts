@@ -14,13 +14,13 @@ export async function crearFactura({ clienteId, stripePaymentIntentId, iva = 21.
   try {
     await client.query('BEGIN');
 
-    // 1. S'assurer que le client existe en gérant les conflits sur pk_cliente ou email
+    // On gère le conflit sur l'email car il est unique dans la table clientes
     await client.query(`
       INSERT INTO clientes (pk_cliente, email, nombre_cliente, tipo, razon_social)
       VALUES ($1, $2, $3, 'autonomo', 'persona natural')
-      ON CONFLICT (pk_cliente) 
+      ON CONFLICT (email) 
       DO UPDATE SET 
-        email = COALESCE(EXCLUDED.email, clientes.email),
+        pk_cliente = EXCLUDED.pk_cliente,
         nombre_cliente = COALESCE(EXCLUDED.nombre_cliente, clientes.nombre_cliente);
     `, [
       clienteId, 
@@ -28,7 +28,7 @@ export async function crearFactura({ clienteId, stripePaymentIntentId, iva = 21.
       nombreCliente || 'Cliente'
     ]);
 
-    // 2. Insérer la facture dans la table 'facturas'
+    // Insérer la facture
     const query = `
       INSERT INTO facturas (fk_cliente, stripe_payment_intent_id, iva)
       VALUES ($1, $2, $3)
@@ -48,3 +48,4 @@ export async function crearFactura({ clienteId, stripePaymentIntentId, iva = 21.
     client.release();
   }
 }
+
