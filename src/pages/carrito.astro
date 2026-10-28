@@ -1,7 +1,6 @@
 ---
 // src/pages/carrito.astro
 import LayoutBase from '../layouts/LayoutBase.astro';
-import { BUCKET } from '../config';
 ---
 
 <LayoutBase title="Tu Cesta de Compras | Exclusive Motors">
@@ -51,12 +50,19 @@ import { BUCKET } from '../config';
     renderCart();
   }
 
-  // Résolution intelligente et centralisée de l'image
+  // Fonction de résolution ultra-large pour capturer n'importe quelle clé d'image de la BDD
   function resolveImageUrl(item) {
     const prod = item.producto || item;
-    const rawImg = prod.url_imagen || prod.imagen_url || prod.imagen || prod.foto || prod.img || prod.image || prod.path || "";
     
-    if (!rawImg || typeof rawImg !== 'string') return `${BUCKET_URL}showroom-coches.jpg`;
+    // Journal de débogage pour voir exactement ce que contient l'objet produit dans la console (F12)
+    console.log("Objet produit analysé pour l'image :", prod);
+
+    const rawImg = prod.url_imagen || prod.imagen_url || prod.imagen || prod.foto || prod.img || prod.image || prod.path || prod.caratula || "";
+    
+    if (!rawImg || typeof rawImg !== 'string') {
+      return `${BUCKET_URL}showroom-coches.jpg`;
+    }
+    
     const clean = rawImg.trim();
     
     if (clean.startsWith('http://') || clean.startsWith('https://')) {
