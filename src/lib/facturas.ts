@@ -5,22 +5,31 @@ interface NuevaFactura {
   clienteId: string;
   stripePaymentIntentId: string;
   iva?: number;
+  email?: string;
+  nombreCliente?: string;
 }
 
 /**
- * Inserta una nueva factura asegurando que el cliente exista en la tabla 'clientes'.
+ * Insère ou met à jour le client et crée la facture correspondante.
  */
-export async function crearFactura({ clienteId, stripePaymentIntentId, iva = 21.00 }: NuevaFactura): Promise<any> {
+export async function crearFactura({ clienteId, stripePaymentIntentId, iva = 21.00, email, nombreCliente }: NuevaFactura): Promise<any> {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
-    // 1. S'assurer que le client existe dans la table 'clientes' (évite l'erreur de clé étrangère)
+    // 1. S'assurer que le client existe dans la table 'clientes' pour éviter l'erreur de contrainte de clé étrangère
     await client.query(`
-      INSERT INTO clientes (pk_cliente)
-      VALUES ($1)
-      ON CONFLICT (pk_cliente) DO NOTHING;
-    `, [clienteId]);
+      INSERT INTO clientes (pk_cliente, email, nombre_cliente, tipo, razon_social)
+      VALUES ($1, $2, $3, 'autonomo', 'persona natural')
+      ON CONFLICT (pk_cliente) 
+      DO UPDATE SET 
+        email = COALESCE(EXCLUDED.email, clientes.email),
+        nombre_cliente = COALESCE(EXCLUDED.nombre_cliente, clientes.nombre_cliente);
+    `, [
+      clienteId, 
+      email || 'cliente@example.com', 
+      nombreCliente || 'Cliente'
+    ]);
 
     // 2. Insérer la facture dans la table 'facturas'
     const query = `
@@ -33,7 +42,7 @@ export async function crearFactura({ clienteId, stripePaymentIntentId, iva = 21.
     const { rows } = await client.query(query, values);
     
     await client.query('COMMIT');
-    return rows[0]; // Retorna la factura insertada
+    return rows[0]; // Retourne la facture insérée
   } catch (error) {
     await client.query('ROLLBACK');
     console.error("Error al insertar la factura en Postgres:", error);
@@ -42,3 +51,4 @@ export async function crearFactura({ clienteId, stripePaymentIntentId, iva = 21.
     client.release();
   }
 }
+

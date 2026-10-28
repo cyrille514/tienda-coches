@@ -28,11 +28,16 @@ if (!sessionId) {
 
       if (clienteId && paymentIntentId) {
         try {
-          // 1. Guardar en la tabla facturas
+          const emailCliente = session.customer_details?.email || undefined;
+          const nombreCliente = session.customer_details?.name || 'Cliente';
+
+          // 1. Enregistrer la facture (et le client s'il n'existe pas)
           const nuevaFactura = await crearFactura({
             clienteId,
             stripePaymentIntentId: paymentIntentId,
-            iva: 21.00
+            iva: 21.00,
+            email: emailCliente,
+            nombreCliente: nombreCliente
           });
 
           if (nuevaFactura && nuevaFactura.pk_factura) {
@@ -46,7 +51,7 @@ if (!sessionId) {
           errorMessage = `Error al registrar la factura en la base de datos: ${dbError.message || 'Desconocido'}`;
         }
 
-        // 2. Enviar correo electrónico de confirmación con Brevo
+        // 2. Envoyer l'e-mail de confirmation avec Brevo
         if (pagoExitoso) {
           try {
             const emailCliente = session.customer_details?.email;
@@ -136,6 +141,4 @@ if (!sessionId) {
     console.log("Cesta vaciada con éxito tras el pago.");
   }
 </script>
-
-
 
