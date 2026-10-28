@@ -59,7 +59,6 @@ import LayoutBase from '../layouts/LayoutBase.astro';
     }
     
     let clean = rawImg.trim();
-    
     if (clean.startsWith('http://') || clean.startsWith('https://')) {
       return encodeURI(clean);
     }
@@ -186,11 +185,26 @@ import LayoutBase from '../layouts/LayoutBase.astro';
           btnCheckout.textContent = "Redirigiendo a Stripe...";
           btnCheckout.disabled = true;
 
+          // Extraction du token s'il existe dans le localStorage Supabase
+          let bearerToken = "";
+          try {
+            const sbAuthKey = Object.keys(localStorage).find(k => k.includes('-auth-token'));
+            if (sbAuthKey) {
+              const sessionObj = JSON.parse(localStorage.getItem(sbAuthKey) || '{}');
+              if (sessionObj?.access_token) {
+                bearerToken = sessionObj.access_token;
+              }
+            }
+          } catch(e) {}
+
+          const headers = { "Content-Type": "application/json" };
+          if (bearerToken) {
+            headers["Authorization"] = `Bearer ${bearerToken}`;
+          }
+
           const response = await fetch("/api/crear-checkout", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: headers,
             body: JSON.stringify({ items: cesta }),
           });
 
