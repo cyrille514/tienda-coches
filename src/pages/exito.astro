@@ -1,11 +1,12 @@
 ---
+// src/pages/exito.astro
 import "../styles/global.css";
 import LayoutBase from "../layouts/LayoutBase.astro";
-import { crearFactura } from '../lib/facturas'; // Función para guardar la factura
-import { enviarEmailFactura } from '../lib/brevo'; // Función para enviar email con Brevo
+import { crearFactura } from '../lib/facturas'; 
+import { enviarEmailFactura } from '../lib/brevo'; 
 import Stripe from 'stripe';
 
-const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY);
+const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY || '');
 const sessionId = Astro.url.searchParams.get('session_id');
 
 let pagoExitoso = false;
@@ -21,44 +22,60 @@ if (!sessionId) {
     if (session.payment_status === 'paid') {
       const clienteId = session.metadata?.userId;
       
-      // Obtenemos el payment_intent (puede venir como string o como objeto expandido)
       const paymentIntentId = typeof session.payment_intent === 'string' 
         ? session.payment_intent 
         : session.payment_intent?.id;
 
       if (clienteId && paymentIntentId) {
-        // 1. Guardamos en la tabla facturas
-        const nuevaFactura = await crearFactura({
-          clienteId,
-          stripePaymentIntentId: paymentIntentId,
-          iva: 21.00 // O el IVA que corresponda a tu tienda
-        });
-
-        facturaId = nuevaFactura.pk_factura;
-        pagoExitoso = true;
-
-        // 2. Enviar correo electrónico de confirmación con Brevo
-        const emailCliente = session.customer_details?.email;
-        const nombreCliente = session.customer_details?.name || 'Cliente';
-        const total = (session.amount_total || 0) / 100;
-
-        if (emailCliente && facturaId) {
-          await enviarEmailFactura({
-            emailCliente,
-            nombreCliente,
-            facturaId,
-            total
+        try {
+          // 1. Intentar guardar en la tabla facturas
+          const nuevaFactura = await crearFactura({
+            clienteId,
+            stripePaymentIntentId: paymentIntentId,
+            iva: 21.00
           });
+
+          if (nuevaFactura && nuevaFactura.pk_factura) {
+            facturaId = nuevaFactura.pk_factura;
+            pagoExitoso = true;
+          } else {
+            throw.error("La función crearFactura no devolvió un ID válido.");
+          }
+        } catch (dbError: any) {
+          console.error("ERREUR SQL/DB [crearFactura]:", dbError.message || dbError);
+          errorMessage = `Error al registrar la factura en la base de datos: ${dbError.message || 'Desconocido'}`;
         }
+
+        // 2. Enviar correo electrónico de confirmación con Brevo (si la factura se creó con éxito)
+        if (pagoExitoso) {
+          try {
+            const emailCliente = session.customer_details?.email;
+            const nombreCliente = session.customer_details?.name || 'Cliente';
+            const total = (session.amount_total || 0) / 100;
+
+            if (emailCliente && facturaId) {
+              await enviarEmailFactura({
+                emailCliente,
+                nombreCliente,
+                facturaId,
+                total
+              });
+            }
+          } catch (emailError: any) {
+            console.error("ERREUR BREVO [enviarEmailFactura]:", emailError.message || emailError);
+            // On ne bloque pas le succès du paiement si l'email échoue, mais on l'enregistre
+          }
+        }
+
       } else {
-        errorMessage = 'Faltan datos del cliente o del pago de Stripe.';
+        errorMessage = 'Faltan datos del cliente (userId) o del pago de Stripe.';
       }
     } else {
       errorMessage = 'El pago no se ha completado correctamente.';
     }
   } catch (error: any) {
-    console.error('Error al procesar el éxito del pago:', error);
-    errorMessage = 'Hubo un error al verificar la sesión de pago.';
+    console.error('Erreur Stripe [retrieve session]:', error.message || error);
+    errorMessage = 'Hubo un error al verificar la sesión de pago con Stripe.';
   }
 }
 ---
@@ -114,9 +131,8 @@ if (!sessionId) {
 <!-- Script en el cliente para vaciar el localStorage de la cesta -->
 <script define:vars={{ pagoExitoso }}>
   if (pagoExitoso) {
-    // Limpiamos el carrito del navegador
     localStorage.removeItem("cesta");
-    // Avisamos a la app que la cesta cambió (por si hay globos contadores en el header)
+    localStorage.removeItem("tienda_coches_carrito");
     window.dispatchEvent(new Event("cestaUpdated"));
     console.log("Cesta vaciada con éxito tras el pago.");
   }
