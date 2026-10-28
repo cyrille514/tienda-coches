@@ -28,7 +28,7 @@ if (!sessionId) {
 
       if (clienteId && paymentIntentId) {
         try {
-          // 1. Intentar guardar en la tabla facturas
+          // 1. Guardar en la tabla facturas
           const nuevaFactura = await crearFactura({
             clienteId,
             stripePaymentIntentId: paymentIntentId,
@@ -39,14 +39,14 @@ if (!sessionId) {
             facturaId = nuevaFactura.pk_factura;
             pagoExitoso = true;
           } else {
-            throw.error("La función crearFactura no devolvió un ID válido.");
+            throw new Error("La función crearFactura no devolvió un ID válido.");
           }
         } catch (dbError: any) {
           console.error("ERREUR SQL/DB [crearFactura]:", dbError.message || dbError);
           errorMessage = `Error al registrar la factura en la base de datos: ${dbError.message || 'Desconocido'}`;
         }
 
-        // 2. Enviar correo electrónico de confirmación con Brevo (si la factura se creó con éxito)
+        // 2. Enviar correo electrónico de confirmación con Brevo
         if (pagoExitoso) {
           try {
             const emailCliente = session.customer_details?.email;
@@ -63,7 +63,6 @@ if (!sessionId) {
             }
           } catch (emailError: any) {
             console.error("ERREUR BREVO [enviarEmailFactura]:", emailError.message || emailError);
-            // On ne bloque pas le succès du paiement si l'email échoue, mais on l'enregistre
           }
         }
 
@@ -137,3 +136,6 @@ if (!sessionId) {
     console.log("Cesta vaciada con éxito tras el pago.");
   }
 </script>
+
+
+
