@@ -1,4 +1,5 @@
 ---
+---
 // src/pages/carrito.astro
 import LayoutBase from '../layouts/LayoutBase.astro';
 ---
@@ -31,7 +32,7 @@ import LayoutBase from '../layouts/LayoutBase.astro';
 </LayoutBase>
 
 <script is:inline>
-  const BUCKET_URL = "https://nuhubizsvumyespdvzef.supabase.co/storage/v1/object/public/vehiculos/";
+  const SUPABASE_PUBLIC_URL = "https://nuhubizsvumyespdvzef.supabase.co/storage/v1/object/public";
 
   function getCart() {
     try {
@@ -50,27 +51,32 @@ import LayoutBase from '../layouts/LayoutBase.astro';
     renderCart();
   }
 
-  // Fonction de résolution ultra-large pour capturer n'importe quelle clé d'image de la BDD
+  // Résolution intelligente des images avec logs de débogage
   function resolveImageUrl(item) {
     const prod = item.producto || item;
+    const rawImg = prod.url_imagen || prod.imagen_url || prod.imagen || prod.foto || prod.img || prod.image || prod.path || "";
     
-    // Journal de débogage pour voir exactement ce que contient l'objet produit dans la console (F12)
-    console.log("Objet produit analysé pour l'image :", prod);
+    console.log("Nom brut en base de données :", rawImg);
 
-    const rawImg = prod.url_imagen || prod.imagen_url || prod.imagen || prod.foto || prod.img || prod.image || prod.path || prod.caratula || "";
-    
     if (!rawImg || typeof rawImg !== 'string') {
-      return `${BUCKET_URL}showroom-coches.jpg`;
+      return `${SUPABASE_PUBLIC_URL}/vehiculos/showroom-coches.jpg`;
     }
     
-    const clean = rawImg.trim();
+    let clean = rawImg.trim();
     
     if (clean.startsWith('http://') || clean.startsWith('https://')) {
-      return clean;
+      return encodeURI(clean);
     }
+
+    // Nettoyage des préfixes multiples
+    clean = clean.replace(/^\/?vehiculos\//, '');
+    clean = clean.startsWith('/') ? clean : '/' + clean;
+
+    const finalUrl = `${SUPABASE_PUBLIC_URL}/vehiculos${clean}`;
+    const encoded = encodeURI(finalUrl);
     
-    const formattedPath = clean.startsWith('/') ? clean : '/' + clean;
-    return `${BUCKET_URL.replace(/\/$/, '')}${formattedPath}`;
+    console.log("URL finale envoyée à l'image :", encoded);
+    return encoded;
   }
 
   const renderCart = () => {
@@ -121,7 +127,7 @@ import LayoutBase from '../layouts/LayoutBase.astro';
             </div>
           </div>
 
-          <!-- Controls Quantité & Prix -->
+          <!-- Contrôles Quantité & Prix -->
           <div class="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto">
             
             <div class="flex items-center bg-slate-950 rounded-xl border border-slate-800 p-1">
@@ -204,13 +210,13 @@ import LayoutBase from '../layouts/LayoutBase.astro';
           if (response.ok && data.url) {
             window.location.href = data.url;
           } else {
-            alert(data.error || "Erreur lors de la création de la session de paiement.");
+            alert(data.error || "Error al crear la sesión de pago.");
             btnCheckout.textContent = "Efectuar la compra con Stripe";
             btnCheckout.disabled = false;
           }
         } catch (error) {
-          console.error("Erreur Stripe:", error);
-          alert("Une erreur est survenue lors de la connexion à Stripe.");
+          console.error("Error Stripe:", error);
+          alert("Ha ocurrido un error al conectar avec Stripe.");
           btnCheckout.textContent = "Efectuar la compra con Stripe";
           btnCheckout.disabled = false;
         }
