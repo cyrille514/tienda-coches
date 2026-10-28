@@ -3,7 +3,7 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../lib/supabase'; 
 import Stripe from 'stripe';
 
-const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY);
+const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY || '');
 const BUCKET_URL = "https://nuhubizsvumyespdvzef.supabase.co/storage/v1/object/public/vehiculos/";
 
 export const POST: APIRoute = async ({ request, cookies }) => {
@@ -14,11 +14,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     let userId = null;
 
     if (accessToken && refreshToken) {
-      const { data } = await supabase.auth.setSession({
+      const { data, error } = await supabase.auth.setSession({
         access_token: accessToken.value,
         refresh_token: refreshToken.value,
       });
-      if (data.user) {
+      if (data?.user) {
         userId = data.user.id;
       }
     }
@@ -31,9 +31,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     const body = await request.json();
-    const items = body.items;
+    const items = body.items || [];
 
-    if (!items || items.length === 0) {
+    if (!items.length) {
       return new Response(JSON.stringify({ error: 'El carrito está vacío' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
@@ -46,12 +46,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const lineItems = items.map((item: any) => {
       const producto = item.producto || item;
       
-      const nombre = producto.nombre_producto || producto.nombre || producto.modelo || producto.title || producto.titulo || producto.marca || "Producto";
+      const nombre = producto.nombre_producto || producto.nombre || producto.modelo || producto.title || producto.titulo || producto.marca || "Vehículo Exclusivo";
       const precio = parseFloat(producto.precio || producto.precio_producto || producto.price) || 0;
       const cantidad = item.cantidad || 1;
       
       const rawImg = producto.url_imagen || producto.imagen_url || producto.imagen || producto.foto || producto.img || producto.image || producto.path || "";
-      let imagenFinal = undefined;
+      let imagenFinal: string | undefined = undefined;
 
       if (rawImg && typeof rawImg === 'string') {
         const cleanPath = rawImg.trim();
@@ -64,12 +64,18 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         }
       }
 
-      const productData: any = {
-        name: nombre,
-      };
+      const productData: any = { name: nombre };
 
-      if (imagenFinal && (imagenFinal.startsWith('http://') || imagenFinal.startsWith('https://'))) {
-        productData.images = [imagenFinal];
+      // Validation stricte et sécurisée avec le validateur URL natif
+      if (imagenFinal) {
+        try {
+          const parsedUrl = new URL(imagenFinal);
+          if (parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:') {
+            productData.images = [imagenFinal];
+          }
+        } catch (e) {
+          console.warn("Image ignorée pour Stripe car URL invalide :", imagenFinal);
+        }
       }
 
       return {
@@ -98,8 +104,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     });
 
   } catch (error: any) {
-    console.error("Error en crear-checkout:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error("ERREUR CRITIQUE [crear-checkout]:", error.message, error.stack);
+    return new Response(JSON.stringify({ error: error.message || 'Erreur interne du serveur' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
