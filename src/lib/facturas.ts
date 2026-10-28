@@ -14,28 +14,39 @@ export async function crearFactura({ clienteId, stripePaymentIntentId, iva = 21.
   try {
     await client.query('BEGIN');
 
-    // On gère le conflit sur l'email car il est unique dans la table clientes
-    await client.query(`
-      INSERT INTO clientes (pk_cliente, email, nombre_cliente, tipo, razon_social)
-      VALUES ($1, $2, $3, 'autonomo', 'persona natural')
-      ON CONFLICT (email) 
-      DO UPDATE SET 
-        pk_cliente = EXCLUDED.pk_cliente,
-        nombre_cliente = COALESCE(EXCLUDED.nombre_cliente, clientes.nombre_cliente);
-    `, [
-      clienteId, 
-      email || 'cliente@example.com', 
-      nombreCliente || 'Cliente'
-    ]);
+    let finalClienteId = clienteId;
 
-    // Insérer la facture
+    if (email) {
+      // 1. Vérifier si un client existe déjà avec cet e-mail exact
+      const existingClientQuery = `SELECT pk_cliente FROM clientes WHERE email = $1 LIMIT 1;`;
+      const existingResult = await client.query(existingClientQuery, [email]);
+
+      if (existingResult.rows.length > 0) {
+        // Si l'e-mail existe déjà, on utilise son ID existant pour la facture
+        finalClienteId = existingResult.rows[0].pk_cliente;
+      } else {
+        // Sinon, on insère le nouveau client en respectant les colonnes obligatoires
+        const insertClientQuery = `
+          INSERT INTO clientes (pk_cliente, email, nombre_cliente, tipo, razon_social)
+          VALUES ($1, $2, $3, 'autonomo', 'persona natural')
+          ON CONFLICT (pk_cliente) DO NOTHING;
+        `;
+        await client.query(insertClientQuery, [
+          clienteId, 
+          email, 
+          nombreCliente || 'Cliente'
+        ]);
+      }
+    }
+
+    // 2. Insérer la facture dans la table 'facturas' avec le bon ID client garanti
     const query = `
       INSERT INTO facturas (fk_cliente, stripe_payment_intent_id, iva)
       VALUES ($1, $2, $3)
       RETURNING *;
     `;
     
-    const values = [clienteId, stripePaymentIntentId, iva];
+    const values = [finalClienteId, stripePaymentIntentId, iva];
     const { rows } = await client.query(query, values);
     
     await client.query('COMMIT');
@@ -48,4 +59,3 @@ export async function crearFactura({ clienteId, stripePaymentIntentId, iva = 21.
     client.release();
   }
 }
-
