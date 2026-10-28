@@ -9,21 +9,17 @@ interface NuevaFactura {
   nombreCliente?: string;
 }
 
-/**
- * Insère ou met à jour le client et crée la facture correspondante.
- */
 export async function crearFactura({ clienteId, stripePaymentIntentId, iva = 21.00, email, nombreCliente }: NuevaFactura): Promise<any> {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
-    // 1. S'assurer que le client existe dans la table 'clientes' pour éviter l'erreur de contrainte de clé étrangère
+    // 1. Insérer ou mettre à jour le client en gérant le conflit potentiel sur l'email ou l'ID
     await client.query(`
       INSERT INTO clientes (pk_cliente, email, nombre_cliente, tipo, razon_social)
       VALUES ($1, $2, $3, 'autonomo', 'persona natural')
-      ON CONFLICT (pk_cliente) 
+      ON CONFLICT (email) 
       DO UPDATE SET 
-        email = COALESCE(EXCLUDED.email, clientes.email),
         nombre_cliente = COALESCE(EXCLUDED.nombre_cliente, clientes.nombre_cliente);
     `, [
       clienteId, 
@@ -42,7 +38,7 @@ export async function crearFactura({ clienteId, stripePaymentIntentId, iva = 21.
     const { rows } = await client.query(query, values);
     
     await client.query('COMMIT');
-    return rows[0]; // Retourne la facture insérée
+    return rows[0];
   } catch (error) {
     await client.query('ROLLBACK');
     console.error("Error al insertar la factura en Postgres:", error);
@@ -51,4 +47,3 @@ export async function crearFactura({ clienteId, stripePaymentIntentId, iva = 21.
     client.release();
   }
 }
-
