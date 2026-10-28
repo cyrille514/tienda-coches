@@ -14,12 +14,13 @@ export async function crearFactura({ clienteId, stripePaymentIntentId, iva = 21.
   try {
     await client.query('BEGIN');
 
-    // 1. Insérer ou mettre à jour le client en gérant le conflit potentiel sur l'email ou l'ID
+    // 1. S'assurer que le client existe en gérant les conflits sur pk_cliente ou email
     await client.query(`
       INSERT INTO clientes (pk_cliente, email, nombre_cliente, tipo, razon_social)
       VALUES ($1, $2, $3, 'autonomo', 'persona natural')
-      ON CONFLICT (email) 
+      ON CONFLICT (pk_cliente) 
       DO UPDATE SET 
+        email = COALESCE(EXCLUDED.email, clientes.email),
         nombre_cliente = COALESCE(EXCLUDED.nombre_cliente, clientes.nombre_cliente);
     `, [
       clienteId, 
