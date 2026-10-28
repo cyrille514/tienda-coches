@@ -2,9 +2,9 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../lib/supabase'; 
 import Stripe from 'stripe';
-import { BUCKET } from '../../config';
 
 const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY);
+const BUCKET_URL = "https://nuhubizsvumyespdvzef.supabase.co/storage/v1/object/public/vehiculos/";
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
@@ -50,7 +50,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       const precio = parseFloat(producto.precio || producto.precio_producto || producto.price) || 0;
       const cantidad = item.cantidad || 1;
       
-      // Recherche exhaustive et sécurisée de l'image
       const rawImg = producto.url_imagen || producto.imagen_url || producto.imagen || producto.foto || producto.img || producto.image || producto.path || "";
       let imagenFinal = undefined;
 
@@ -58,8 +57,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         const cleanPath = rawImg.trim();
         if (cleanPath.startsWith('http://') || cleanPath.startsWith('https://')) {
           imagenFinal = cleanPath;
-        } else if (typeof BUCKET !== 'undefined' && BUCKET) {
-          const formattedBucket = BUCKET.replace(/\/$/, "");
+        } else if (cleanPath) {
+          const formattedBucket = BUCKET_URL.replace(/\/$/, "");
           const formattedPath = cleanPath.startsWith('/') ? cleanPath : '/' + cleanPath;
           imagenFinal = `${formattedBucket}${formattedPath}`;
         }
@@ -69,7 +68,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         name: nombre,
       };
 
-      // N'ajoute l'image à Stripe que si c'est une URL absolue valide
       if (imagenFinal && (imagenFinal.startsWith('http://') || imagenFinal.startsWith('https://'))) {
         productData.images = [imagenFinal];
       }

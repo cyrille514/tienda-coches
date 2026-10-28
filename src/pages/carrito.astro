@@ -51,6 +51,22 @@ import { BUCKET } from '../config';
     renderCart();
   }
 
+  // Résolution intelligente et centralisée de l'image
+  function resolveImageUrl(item) {
+    const prod = item.producto || item;
+    const rawImg = prod.url_imagen || prod.imagen_url || prod.imagen || prod.foto || prod.img || prod.image || prod.path || "";
+    
+    if (!rawImg || typeof rawImg !== 'string') return `${BUCKET_URL}showroom-coches.jpg`;
+    const clean = rawImg.trim();
+    
+    if (clean.startsWith('http://') || clean.startsWith('https://')) {
+      return clean;
+    }
+    
+    const formattedPath = clean.startsWith('/') ? clean : '/' + clean;
+    return `${BUCKET_URL.replace(/\/$/, '')}${formattedPath}`;
+  }
+
   const renderCart = () => {
     const container = document.getElementById("cart-container");
     const summary = document.getElementById("cart-summary");
@@ -83,23 +99,7 @@ import { BUCKET } from '../config';
       total += subtotal;
 
       const nombreProducto = prod.nombre || prod.nombre_producto || prod.modelo || prod.title || prod.titulo || prod.marca || "Vehículo Exclusivo";
-
-      // Recherche exhaustive de l'image
-      const rawImg = prod.url_imagen || prod.imagen_url || prod.imagen || prod.foto || prod.img || prod.image || prod.path || "";
-      let imagenFinal = "";
-
-      if (rawImg && typeof rawImg === 'string') {
-        const cleanPath = rawImg.trim();
-        if (cleanPath.startsWith('http://') || cleanPath.startsWith('https://')) {
-          imagenFinal = cleanPath;
-        } else if (cleanPath) {
-          imagenFinal = `${BUCKET_URL}${cleanPath.replace(/^\/+/, '')}`;
-        }
-      }
-
-      if (!imagenFinal) {
-        imagenFinal = `${BUCKET_URL}showroom-coches.jpg`;
-      }
+      const imagenFinal = resolveImageUrl(item);
 
       return `
         <div style="background-color: #0f172a !important; border: 1px solid #1e293b !important;" class="p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
@@ -172,7 +172,6 @@ import { BUCKET } from '../config';
     saveAndNotify(cesta);
   };
 
-  // Appel de l'API Stripe
   document.addEventListener("DOMContentLoaded", () => {
     renderCart();
 
