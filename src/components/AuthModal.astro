@@ -9,8 +9,8 @@
       ✕
     </button>
 
-    <!-- VUE 1 : CONNEXION GOOGLE & ACCUEIL MODALE -->
-    <div id="google-login-view" class="w-full flex flex-col items-center text-center">
+    <!-- VUE 1 : CONNEXION GOOGLE (Affichée par défaut) -->
+    <div id="google-login-view" class="flex flex-col items-center text-center w-full">
       <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-800 mb-4">
         <svg class="w-6 h-6" viewBox="0 0 24 24">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -34,8 +34,8 @@
       </div>
     </div>
 
-    <!-- VUE 2 : FORMULAIRE D'INSCRIPTION PROPRE -->
-    <div id="register-view" class="w-full hidden flex flex-col">
+    <!-- VUE 2 : FORMULAIRE D'INSCRIPTION (Masqué par défaut, s'affiche seul au clic) -->
+    <div id="register-view" class="hidden flex-col w-full">
       <div class="flex items-center justify-between mb-4">
         <button type="button" id="back-to-login-btn" class="text-xs text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer">
           ← Volver
@@ -43,20 +43,24 @@
         <h3 class="text-sm font-semibold text-blue-400 leading-snug">Registro de nuevo cliente</h3>
       </div>
 
+      <div class="mb-4">
+        <h4 class="text-base font-bold text-white leading-snug">Formulario de registro con los datos del nuevo cliente.</h4>
+      </div>
+
       <form id="registro-form" class="space-y-3">
         <div>
           <label class="block text-xs text-slate-400 mb-1">Nombre y Apellidos</label>
-          <input type="text" id="reg-nombre" name="nombre" required class="w-full bg-slate-950 border border-slate-700 rounded-md p-2 text-xs text-white focus:outline-none focus:border-blue-500" placeholder="Ej. Carlos Gómez" />
+          <input type="text" id="reg-nombre" name="nombre" required class="w-full bg-slate-950 border border-slate-700 rounded-md p-2.5 text-xs text-white focus:outline-none focus:border-blue-500" placeholder="Ej. Carlos Gómez" />
         </div>
         <div>
           <label class="block text-xs text-slate-400 mb-1">Correo electrónico</label>
-          <input type="email" id="reg-email" name="email" required class="w-full bg-slate-950 border border-slate-700 rounded-md p-2 text-xs text-white focus:outline-none focus:border-blue-500" placeholder="correo@ejemplo.com" />
+          <input type="email" id="reg-email" name="email" required class="w-full bg-slate-950 border border-slate-700 rounded-md p-2.5 text-xs text-white focus:outline-none focus:border-blue-500" placeholder="correo@ejemplo.com" />
         </div>
         <div>
           <label class="block text-xs text-slate-400 mb-1">Contraseña</label>
-          <input type="password" id="reg-password" name="password" required class="w-full bg-slate-950 border border-slate-700 rounded-md p-2 text-xs text-white focus:outline-none focus:border-blue-500" placeholder="••••••••" />
+          <input type="password" id="reg-password" name="password" required class="w-full bg-slate-950 border border-slate-700 rounded-md p-2.5 text-xs text-white focus:outline-none focus:border-blue-500" placeholder="••••••••" />
         </div>
-        <button type="submit" id="submit-reg-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-colors mt-3 text-xs cursor-pointer shadow-lg shadow-blue-600/20">
+        <button type="submit" id="submit-reg-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors mt-3 text-xs cursor-pointer shadow-lg shadow-blue-600/20">
           Registrarse
         </button>
       </form>
@@ -80,17 +84,18 @@
   const googleLoginView = document.getElementById('google-login-view');
   const registerView = document.getElementById('register-view');
 
-  // Ouverture de la modale sur la vue Connexion par défaut
+  // À l'ouverture, on affiche uniquement Google et on cache l'inscription
   userBtn?.addEventListener('click', (e) => {
     e.preventDefault();
     googleLoginView?.classList.remove('hidden');
+    googleLoginView?.classList.add('flex');
+    registerView?.classList.remove('flex');
     registerView?.classList.add('hidden');
     modal?.showModal();
   });
 
   closeBtn?.addEventListener('click', () => modal?.close());
 
-  // Fermeture en cliquant en dehors de la modale
   modal?.addEventListener('click', (e) => {
     const dim = modal.getBoundingClientRect();
     if (e.clientX < dim.left || e.clientX > dim.right || e.clientY < dim.top || e.clientY > dim.bottom) {
@@ -98,19 +103,22 @@
     }
   });
 
-  // Basculer vers le formulaire d'inscription proprement
+  // Au clic sur "Crear cuenta", on cache Google et on affiche UNIQUEMENT le formulaire d'inscription
   goToRegisterBtn?.addEventListener('click', () => {
+    googleLoginView?.classList.remove('flex');
     googleLoginView?.classList.add('hidden');
     registerView?.classList.remove('hidden');
+    registerView?.classList.add('flex');
   });
 
-  // Revenir à la vue connexion
+  // Revenir en arrière vers la vue Google
   backToLoginBtn?.addEventListener('click', () => {
+    registerView?.classList.remove('flex');
     registerView?.classList.add('hidden');
     googleLoginView?.classList.remove('hidden');
+    googleLoginView?.classList.add('flex');
   });
 
-  // Connexion Google
   googleBtn?.addEventListener('click', async () => {
     googleBtn.textContent = 'Conectando...';
     googleBtn.disabled = true;
@@ -130,7 +138,6 @@
     }
   });
 
-  // Inscription par Email / Mot de passe
   registroForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -154,7 +161,6 @@
       submitRegBtn.textContent = 'Registrarse';
       submitRegBtn.disabled = false;
     } else if (data.session) {
-      // Stockage sécurisé des cookies de session
       document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=604800; SameSite=Lax; Secure`;
       document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=604800; SameSite=Lax; Secure`;
       window.location.href = '/productos?categoria=1';
