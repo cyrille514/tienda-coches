@@ -2,14 +2,14 @@
 // src/components/AuthModal.astro
 ---
 <dialog id="auth-modal" class="p-0 rounded-2xl shadow-2xl backdrop:bg-black/80 border border-slate-800 max-w-md w-full bg-slate-900 text-white overflow-hidden m-auto">
-  <div class="relative flex flex-col w-full p-8">
+  <div class="relative flex flex-col w-full p-6 sm:p-8">
     
     <!-- Bouton de fermeture -->
     <button id="close-modal-btn" type="button" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl font-bold z-20 cursor-pointer">
       ✕
     </button>
 
-    <!-- VUE 1 : CONNEXION GOOGLE (Affichée par défaut) -->
+    <!-- VUE 1 : CONNEXION GOOGLE (Visible par défaut) -->
     <div id="google-login-view" class="flex flex-col items-center text-center w-full">
       <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-800 mb-4">
         <svg class="w-6 h-6" viewBox="0 0 24 24">
@@ -34,7 +34,7 @@
       </div>
     </div>
 
-    <!-- VUE 2 : FORMULAIRE D'INSCRIPTION (Masqué par défaut, s'affiche seul au clic) -->
+    <!-- VUE 2 : FORMULAIRE D'INSCRIPTION (Oculto por defecto con 'hidden') -->
     <div id="register-view" class="hidden flex-col w-full">
       <div class="flex items-center justify-between mb-4">
         <button type="button" id="back-to-login-btn" class="text-xs text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer">
@@ -44,23 +44,23 @@
       </div>
 
       <div class="mb-4">
-        <h4 class="text-base font-bold text-white leading-snug">Formulario de registro con los datos del nuevo cliente.</h4>
+        <h4 class="text-sm font-bold text-white leading-snug">Formulario de registro con los datos del nuevo cliente.</h4>
       </div>
 
       <form id="registro-form" class="space-y-3">
         <div>
           <label class="block text-xs text-slate-400 mb-1">Nombre y Apellidos</label>
-          <input type="text" id="reg-nombre" name="nombre" required class="w-full bg-slate-950 border border-slate-700 rounded-md p-2.5 text-xs text-white focus:outline-none focus:border-blue-500" placeholder="Ej. Carlos Gómez" />
+          <input type="text" id="reg-nombre" name="nombre" required class="w-full bg-slate-950 border border-slate-700 rounded-md p-2 text-xs text-white focus:outline-none focus:border-blue-500" placeholder="Ej. Carlos Gómez" />
         </div>
         <div>
           <label class="block text-xs text-slate-400 mb-1">Correo electrónico</label>
-          <input type="email" id="reg-email" name="email" required class="w-full bg-slate-950 border border-slate-700 rounded-md p-2.5 text-xs text-white focus:outline-none focus:border-blue-500" placeholder="correo@ejemplo.com" />
+          <input type="email" id="reg-email" name="email" required class="w-full bg-slate-950 border border-slate-700 rounded-md p-2 text-xs text-white focus:outline-none focus:border-blue-500" placeholder="correo@ejemplo.com" />
         </div>
         <div>
           <label class="block text-xs text-slate-400 mb-1">Contraseña</label>
-          <input type="password" id="reg-password" name="password" required class="w-full bg-slate-950 border border-slate-700 rounded-md p-2.5 text-xs text-white focus:outline-none focus:border-blue-500" placeholder="••••••••" />
+          <input type="password" id="reg-password" name="password" required class="w-full bg-slate-950 border border-slate-700 rounded-md p-2 text-xs text-white focus:outline-none focus:border-blue-500" placeholder="••••••••" />
         </div>
-        <button type="submit" id="submit-reg-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors mt-3 text-xs cursor-pointer shadow-lg shadow-blue-600/20">
+        <button type="submit" id="submit-reg-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-colors mt-3 text-xs cursor-pointer shadow-lg shadow-blue-600/20">
           Registrarse
         </button>
       </form>
@@ -84,7 +84,7 @@
   const googleLoginView = document.getElementById('google-login-view');
   const registerView = document.getElementById('register-view');
 
-  // À l'ouverture, on affiche uniquement Google et on cache l'inscription
+  // Al abrir el modal, aseguramos que solo se vea Google y se oculte el registro
   userBtn?.addEventListener('click', (e) => {
     e.preventDefault();
     googleLoginView?.classList.remove('hidden');
@@ -103,7 +103,7 @@
     }
   });
 
-  // Au clic sur "Crear cuenta", on cache Google et on affiche UNIQUEMENT le formulaire d'inscription
+  // Al hacer clic en "Crear cuenta", ocultamos Google y mostramos únicamente el formulario de registro
   goToRegisterBtn?.addEventListener('click', () => {
     googleLoginView?.classList.remove('flex');
     googleLoginView?.classList.add('hidden');
@@ -111,7 +111,7 @@
     registerView?.classList.add('flex');
   });
 
-  // Revenir en arrière vers la vue Google
+  // Volver a la vista de Google desde el registro
   backToLoginBtn?.addEventListener('click', () => {
     registerView?.classList.remove('flex');
     registerView?.classList.add('hidden');
@@ -165,7 +165,7 @@
       document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=604800; SameSite=Lax; Secure`;
       window.location.href = '/productos?categoria=1';
     } else {
-      alert('¡Cuenta creada con éxito! Por favor, verifica tu correo ou inicia sesión.');
+      alert('¡Cuenta creada con éxito! Por favor, verifica tu correo o inicia sesión.');
       window.location.reload();
     }
   });
