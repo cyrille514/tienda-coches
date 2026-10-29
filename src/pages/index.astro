@@ -8,14 +8,14 @@ import { BUCKET } from '../config';
   <div class="flex flex-col gap-4">
     
     <!-- Image Showroom Principale -->
-    <div class="relative overflow-hidden rounded-2xl border border-slate-800/80 shadow-lg group">
+    <div class="relative overflow-hidden rounded-2xl border border-slate-800/80 shadow-lg group bg-slate-950">
       <img 
         src={`${BUCKET}showroom-coches.jpg`} 
         alt="Showroom de Coches" 
-        class="w-full h-[220px] sm:h-[260px] object-cover group-hover:scale-105 transition-transform duration-500"
+        class="w-full h-[240px] sm:h-[320px] object-contain object-center group-hover:scale-105 transition-transform duration-500"
         onerror="this.src='https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=1200&auto=format&fit=crop';"
       />
-      <div class="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent flex items-end p-5">
+      <div class="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent flex items-end p-5 pointer-events-none">
         <div>
           <h1 class="text-xl font-bold text-white leading-tight">Showroom Exclusivo</h1>
           <p class="text-xs sm:text-sm text-slate-300">Descubre nuestra selección de vehículos de alta gama en Barcelona.</p>
