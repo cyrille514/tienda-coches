@@ -1,20 +1,39 @@
 import type { APIRoute } from 'astro';
 import { pool } from '../../../lib/db';
+import { supabase } from '../../../lib/supabase'; // Assurez-vous d'importer votre client Supabase
 
-export const POST: APIRoute = async ({ request, redirect }) => {
+export const POST: APIRoute = async ({ request, redirect, cookies }) => {
   try {
+    // 1. Valider la session directement côté serveur via les cookies
+    const accessToken = cookies.get('sb-access-token');
+    const refreshToken = cookies.get('sb-refresh-token');
+
+    if (!accessToken || !refreshToken) {
+      return new Response('Unauthorized', { status: 401 });
+    }
+
+    const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+      access_token: accessToken.value,
+      refresh_token: refreshToken.value,
+    });
+
+    if (sessionError || !sessionData.user) {
+      return new Response('Unauthorized', { status: 401 });
+    }
+
+    // L'ID utilisateur officiel et infalsifiable vient de la session du serveur !
+    const pk_cliente = sessionData.user.id;
+    const email = sessionData.user.email; // Récupéré aussi de la session pour plus de sécurité
+
     const formData = await request.formData();
-    const pk_cliente = formData.get('pk_cliente')?.toString() || '';
     const nombre = formData.get('nombre')?.toString() || '';
-    const email = formData.get('email')?.toString() || '';
     const telefono = formData.get('telefono')?.toString() || '';
 
-    // Vérification des champs obligatoires
-    if (!pk_cliente || !email) {
+    if (!nombre) {
       return new Response('Missing required fields', { status: 400 });
     }
 
-    // 1. Mise à jour / Insertion dans la base de données PostgreSQL (Supabase)
+    // 2. Mise à jour / Insertion dans la base de données PostgreSQL (Supabase)
     const client = await pool.connect();
     try {
       await client.query(
@@ -31,18 +50,17 @@ export const POST: APIRoute = async ({ request, redirect }) => {
       client.release();
     }
 
-    // 2. Synchronisation avec l'API Brevo
+    // 3. Synchronisation avec l'API Brevo (inchangé)
     const brevoApiKey = import.meta.env.BREVO_API_KEY;
 
-    if (brevoApiKey) {
-      // Nettoyage de la chaîne du téléphone
+    if (brevoApiKey && email) {
       const telefonoString = telefono ? telefono.trim() : '';
 
       const brevoData = {
         email: email,
         attributes: {
-          NOM: nombre,           // Utilise l'attribut "NOM" de votre Brevo
-          TELEFONO: telefonoString // Format texte (string)
+          NOM: nombre,
+          TELEFONO: telefonoString
         },
         updateEnabled: true
       };
@@ -60,8 +78,6 @@ export const POST: APIRoute = async ({ request, redirect }) => {
       if (!brevoResponse.ok) {
         const errorText = await brevoResponse.text();
         console.error('Erreur API Brevo :', errorText);
-      } else {
-        console.log('Contact synchronisé avec succès sur Brevo !');
       }
     }
 
