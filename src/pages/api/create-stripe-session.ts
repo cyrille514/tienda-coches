@@ -16,6 +16,11 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
+    // Récupération propre et sécurisée de l'origine (domaine) de la requête
+    const headerHost = request.headers.get('x-forwarded-host') || request.headers.get('host');
+    const headerProto = request.headers.get('x-forwarded-proto') || 'https';
+    const origin = headerHost ? `${headerProto}://${headerHost}` : new URL(request.url).origin;
+
     const lineItems = items.map((item: any) => ({
       price_data: {
         currency: 'eur',
@@ -32,8 +37,8 @@ export const POST: APIRoute = async ({ request }) => {
       payment_method_types: ['card'],
       line_items: lineItems,
       mode: 'payment',
-      success_url: `${new URL(request.url).origin}/carrito?success=true`,
-      cancel_url: `${new URL(request.url).origin}/carrito?canceled=true`,
+      success_url: `${origin}/carrito?success=true`,
+      cancel_url: `${origin}/carrito?canceled=true`,
     });
 
     return new Response(JSON.stringify({ url: session.url }), {
