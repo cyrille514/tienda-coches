@@ -7,10 +7,10 @@ const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY || '');
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
-    // 1. Récupération optionnelle de l'utilisateur connecté via les cookies Supabase
+    // 1. Récupération de l'utilisateur connecté via Supabase
     const accessToken = cookies.get('sb-access-token');
     const refreshToken = cookies.get('sb-refresh-token');
-    let userId = 'invitado'; // Valeur par défaut si non connecté
+    let userId = 'invitado';
 
     if (accessToken && refreshToken) {
       const { data } = await supabase.auth.setSession({
@@ -32,10 +32,23 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     }
 
-    // Récupération propre de l'origine (domaine)
+    // 2. Détermination ultra-sécurisée de l'origine (avec repli forcé sur le domaine Vercel)
     const headerHost = request.headers.get('x-forwarded-host') || request.headers.get('host');
     const headerProto = request.headers.get('x-forwarded-proto') || 'https';
-    const origin = headerHost ? `${headerProto}://${headerHost}` : new URL(request.url).origin;
+    
+    let origin = 'https://tienda-coches.vercel.app'; // Valeur de secours par défaut en production
+    if (headerHost) {
+      origin = `${headerProto}://${headerHost}`;
+    } else {
+      try {
+        const urlObj = new URL(request.url);
+        if (urlObj.origin && urlObj.origin !== 'null') {
+          origin = urlObj.origin;
+        }
+      } catch (e) {
+        // Ignore et garde le secours Vercel
+      }
+    }
 
     const lineItems = items.map((item: any) => ({
       price_data: {
@@ -49,13 +62,13 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       quantity: item.cantidad || 1,
     }));
 
-    // 2. Création de la session Stripe avec le bon userId dans les metadata
+    // 3. Création de la session Stripe
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: lineItems,
       mode: 'payment',
       metadata: {
-        userId: userId, // 👈 ID récupéré dynamiquement et proprement de Supabase
+        userId: userId,
       },
       success_url: `${origin}/exito?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/carrito?canceled=true`,
@@ -67,7 +80,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     });
   } catch (err: any) {
     console.error('Erreur Stripe session:', err);
-    return new Response(JSON.stringify({ error: err.message }), {
+    return new Response(JSON.stringify({ error: err.message || 'Error interno al procesar Stripe' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
