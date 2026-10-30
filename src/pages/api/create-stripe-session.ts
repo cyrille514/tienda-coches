@@ -31,11 +31,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     }
 
-    // URL de base stricte et propre
     const origin = 'https://tienda-coches.vercel.app';
 
     const lineItems = items.map((item: any) => {
-      // Nettoyage ou omission des images si elles posent un problème d'URL non valide
       const imageUrl = item.url_imagen || item.imagen;
       const validImages = (imageUrl && imageUrl.startsWith('http')) ? [imageUrl] : [];
 
@@ -52,8 +50,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       };
     });
 
+    // Création de la session Stripe (sans payment_method_types obsolète)
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
       line_items: lineItems,
       mode: 'payment',
       metadata: {
