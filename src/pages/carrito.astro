@@ -3,227 +3,49 @@
 import LayoutBase from '../layouts/LayoutBase.astro';
 ---
 
-<LayoutBase title="Tu Cesta de Compras | Exclusive Motors">
-  <div class="max-w-4xl mx-auto py-2">
-    <h1 class="text-xl sm:text-2xl font-bold text-white text-center mb-6">Tu Cesta de Compras</h1>
+<LayoutBase title="Carrito de Compras - Tienda de Coches">
+  <div class="max-w-4xl mx-auto py-6">
+    <h1 class="text-2xl font-extrabold text-white mb-6">Tu Carrito de Compras</h1>
 
-    <!-- Zone dynamique du panier -->
-    <div id="cart-container" class="space-y-4">
-      <p class="text-slate-400 text-center py-8 text-sm">Cargando tu cesta...</p>
+    <!-- Modal / Section de Succès de Compra (Masqué par défaut, affiché en JS après commande) -->
+    <div id="modal-exito" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+      <div class="bg-white text-slate-900 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl text-center border border-slate-200">
+        
+        <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-600">
+          <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+
+        <h3 class="text-2xl font-extrabold text-slate-900 mb-2">¡Compra exitosa!</h3>
+        <p class="text-sm text-slate-600 mb-6 leading-relaxed">
+          Muchas gracias por tu compra. Tu pedido se ha registrado correctamente en nuestro sistema y hemos enviado un correo de confirmación.
+        </p>
+
+        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+          <button 
+            type="button"
+            onclick="window.print()" 
+            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-xl text-xs sm:text-sm transition-all shadow-md shadow-blue-600/20 cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            <span>🖨️</span> Ver e Imprimir Factura
+          </button>
+
+          <!-- Bouton Volver al inicio avec redirection stricte vers "/" -->
+          <a 
+            href="/" 
+            class="bg-black hover:bg-slate-900 text-white font-semibold py-2.5 px-4 rounded-xl text-xs sm:text-sm transition-all shadow-md text-center inline-block"
+          >
+            Volver al inicio
+          </a>
+        </div>
+
+      </div>
     </div>
 
-    <!-- Résumé et Total -->
-    <div id="cart-summary" class="mt-6 hidden space-y-4">
-      <div style="background-color: #0f172a !important; border: 1px solid #1e293b !important;" class="p-4 rounded-2xl flex justify-between items-center shadow-lg">
-        <span class="text-sm font-semibold text-slate-300">Total a pagar:</span>
-        <span id="cart-total-price" class="text-lg font-extrabold text-blue-400">€ 0.00</span>
-      </div>
-
-      <button 
-        id="btn-checkout"
-        type="button"
-        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all shadow-lg shadow-blue-600/20 text-sm cursor-pointer"
-      >
-        Efectuar la compra con Stripe
-      </button>
+    <!-- Contenu du panier... -->
+    <div id="contenedor-carrito" class="space-y-4">
+      <!-- Généré dynamiquement en JS -->
     </div>
   </div>
 </LayoutBase>
-
-<script is:inline>
-  const SUPABASE_PUBLIC_URL = "https://nuhubizsvumyespdvzef.supabase.co/storage/v1/object/public";
-
-  function getCart() {
-    try {
-      const raw = localStorage.getItem("cesta") || localStorage.getItem("tienda_coches_carrito") || "[]";
-      return JSON.parse(raw);
-    } catch (e) {
-      return [];
-    }
-  }
-
-  function saveAndNotify(cesta) {
-    const jsonStr = JSON.stringify(cesta);
-    localStorage.setItem("cesta", jsonStr);
-    localStorage.setItem("tienda_coches_carrito", jsonStr);
-    window.dispatchEvent(new Event("cestaUpdated"));
-    renderCart();
-  }
-
-  function resolveImageUrl(item) {
-    const prod = item.producto || item;
-    const rawImg = prod.url_imagen || prod.imagen_url || prod.imagen || prod.foto || prod.img || prod.image || prod.path || "";
-
-    if (!rawImg || typeof rawImg !== 'string') {
-      return `${SUPABASE_PUBLIC_URL}/vehiculos/showroom-coches.jpg`;
-    }
-    
-    let clean = rawImg.trim();
-    if (clean.startsWith('http://') || clean.startsWith('https://')) {
-      return encodeURI(clean);
-    }
-
-    clean = clean.replace(/^\/?vehiculos\//, '');
-    clean = clean.startsWith('/') ? clean : '/' + clean;
-
-    return encodeURI(`${SUPABASE_PUBLIC_URL}/vehiculos${clean}`);
-  }
-
-  const renderCart = () => {
-    const container = document.getElementById("cart-container");
-    const summary = document.getElementById("cart-summary");
-    const totalPriceEl = document.getElementById("cart-total-price");
-
-    if (!container) return;
-
-    const cesta = getCart();
-
-    if (cesta.length === 0) {
-      container.innerHTML = `
-        <div style="background-color: #0f172a !important; border: 1px solid #1e293b !important;" class="p-8 rounded-2xl text-center space-y-4 shadow-lg">
-          <p class="text-slate-400 text-sm">Tu cesta está vacía en este momento.</p>
-          <a href="/productos?categoria=1" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2.5 rounded-xl text-xs transition-colors">
-            Explorar vehículos
-          </a>
-        </div>
-      `;
-      if (summary) summary.classList.add("hidden");
-      return;
-    }
-
-    let total = 0;
-
-    container.innerHTML = cesta.map((item, index) => {
-      const prod = item.producto || item;
-      const precio = Number(prod.precio) || Number(prod.precio_producto) || Number(prod.price) || 0;
-      const cantidad = item.cantidad || 1;
-      const subtotal = precio * cantidad;
-      total += subtotal;
-
-      const nombreProducto = prod.nombre || prod.nombre_producto || prod.modelo || prod.title || prod.titulo || prod.marca || "Vehículo Exclusivo";
-      const imagenFinal = resolveImageUrl(item);
-
-      return `
-        <div style="background-color: #0f172a !important; border: 1px solid #1e293b !important;" class="p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
-          
-          <div class="flex items-center gap-4 w-full sm:w-auto">
-            <div class="w-20 h-16 rounded-xl overflow-hidden bg-slate-950 border border-slate-800 shrink-0">
-              <img src="${imagenFinal}" alt="${nombreProducto}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=500&q=80'" />
-            </div>
-            <div>
-              <h3 class="text-sm font-bold text-white">${nombreProducto}</h3>
-              <p class="text-xs text-slate-400 mt-0.5">€ ${precio.toFixed(2)} c/u</p>
-            </div>
-          </div>
-
-          <div class="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto">
-            
-            <div class="flex items-center bg-slate-950 rounded-xl border border-slate-800 p-1">
-              <button 
-                type="button"
-                onclick="window.changeQuantity(${index}, -1)"
-                class="w-7 h-7 flex items-center justify-center text-slate-300 hover:bg-slate-800 rounded-lg transition-colors text-xs font-bold cursor-pointer"
-              >-</button>
-              <span class="w-8 text-center text-xs font-bold text-white">${cantidad}</span>
-              <button 
-                type="button"
-                onclick="window.changeQuantity(${index}, 1)"
-                class="w-7 h-7 flex items-center justify-center text-slate-300 hover:bg-slate-800 rounded-lg transition-colors text-xs font-bold cursor-pointer"
-              >+</button>
-            </div>
-
-            <div class="flex items-center gap-4">
-              <span class="text-sm font-extrabold text-blue-400">€ ${subtotal.toFixed(2)}</span>
-              <button 
-                type="button"
-                onclick="window.removeItem(${index})"
-                class="text-slate-500 hover:text-red-400 transition-colors p-1 cursor-pointer"
-                title="Eliminar producto"
-              >
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
-            </div>
-
-          </div>
-        </div>
-      `;
-    }).join("");
-
-    if (totalPriceEl) totalPriceEl.textContent = `€ ${total.toFixed(2)}`;
-    if (summary) summary.classList.remove("hidden");
-  };
-
-  window.changeQuantity = function(index, delta) {
-    let cesta = getCart();
-    if (cesta[index]) {
-      cesta[index].cantidad = (cesta[index].cantidad || 1) + delta;
-      if (cesta[index].cantidad <= 0) {
-        cesta.splice(index, 1);
-      }
-    }
-    saveAndNotify(cesta);
-  };
-
-  window.removeItem = function(index) {
-    let cesta = getCart();
-    cesta.splice(index, 1);
-    saveAndNotify(cesta);
-  };
-
-  document.addEventListener("DOMContentLoaded", () => {
-    renderCart();
-
-    const btnCheckout = document.getElementById("btn-checkout");
-    if (btnCheckout) {
-      btnCheckout.addEventListener("click", async () => {
-        const cesta = getCart();
-        if (cesta.length === 0) return;
-
-        try {
-          btnCheckout.textContent = "Redirigiendo a Stripe...";
-          btnCheckout.disabled = true;
-
-          // Extraction du token s'il existe dans le localStorage Supabase
-          let bearerToken = "";
-          try {
-            const sbAuthKey = Object.keys(localStorage).find(k => k.includes('-auth-token'));
-            if (sbAuthKey) {
-              const sessionObj = JSON.parse(localStorage.getItem(sbAuthKey) || '{}');
-              if (sessionObj?.access_token) {
-                bearerToken = sessionObj.access_token;
-              }
-            }
-          } catch(e) {}
-
-          const headers = { "Content-Type": "application/json" };
-          if (bearerToken) {
-            headers["Authorization"] = `Bearer ${bearerToken}`;
-          }
-
-          const response = await fetch("/api/crear-checkout", {
-            method: "POST",
-            headers: headers,
-            body: JSON.stringify({ items: cesta }),
-          });
-
-          const data = await response.json();
-
-          if (response.ok && data.url) {
-            window.location.href = data.url;
-          } else {
-            alert(data.error || "Error al crear la sesión de pago.");
-            btnCheckout.textContent = "Efectuar la compra con Stripe";
-            btnCheckout.disabled = false;
-          }
-        } catch (error) {
-          console.error("Error Stripe:", error);
-          alert("Ha ocurrido un error al conectar con Stripe.");
-          btnCheckout.textContent = "Efectuar la compra con Stripe";
-          btnCheckout.disabled = false;
-        }
-      });
-    }
-  });
-</script>

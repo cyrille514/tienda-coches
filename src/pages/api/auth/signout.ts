@@ -6,10 +6,10 @@ export const GET: APIRoute = async ({ cookies, redirect }) => {
   // Déconnexion côté Supabase
   await supabase.auth.signOut();
 
-  // Suppression des cookies locaux
+  // Suppression des cookies de session
   cookies.delete('sb-access-token', { path: '/' });
   cookies.delete('sb-refresh-token', { path: '/' });
 
-  return redirect('/productos?categoria=1');
+  // Redirection stricte vers la racine de l'accueil
+  return redirect('/', 302);
 };
-
