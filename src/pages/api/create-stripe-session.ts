@@ -2,9 +2,7 @@
 import type { APIRoute } from 'astro';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-02-28.acacia' as any,
-});
+const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY || '');
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -18,7 +16,6 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    // Transformation des articles pour Stripe Checkout (les prix doivent être en centimes)
     const lineItems = items.map((item: any) => ({
       price_data: {
         currency: 'eur',
@@ -31,7 +28,6 @@ export const POST: APIRoute = async ({ request }) => {
       quantity: item.cantidad || 1,
     }));
 
-    // Création de la session de paiement Stripe
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: lineItems,
