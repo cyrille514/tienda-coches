@@ -7,7 +7,6 @@ const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY || '');
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
-    // 1. Récupération de l'utilisateur connecté via Supabase
     const accessToken = cookies.get('sb-access-token');
     const refreshToken = cookies.get('sb-refresh-token');
     let userId = 'invitado';
@@ -32,37 +31,27 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     }
 
-    // 2. Détermination ultra-sécurisée de l'origine (avec repli forcé sur le domaine Vercel)
-    const headerHost = request.headers.get('x-forwarded-host') || request.headers.get('host');
-    const headerProto = request.headers.get('x-forwarded-proto') || 'https';
-    
-    let origin = 'https://tienda-coches.vercel.app'; // Valeur de secours par défaut en production
-    if (headerHost) {
-      origin = `${headerProto}://${headerHost}`;
-    } else {
-      try {
-        const urlObj = new URL(request.url);
-        if (urlObj.origin && urlObj.origin !== 'null') {
-          origin = urlObj.origin;
-        }
-      } catch (e) {
-        // Ignore et garde le secours Vercel
-      }
-    }
+    // URL de base stricte et propre
+    const origin = 'https://tienda-coches.vercel.app';
 
-    const lineItems = items.map((item: any) => ({
-      price_data: {
-        currency: 'eur',
-        product_data: {
-          name: item.nombre_producto || item.nombre || 'Vehículo',
-          images: item.url_imagen ? [item.url_imagen] : [],
+    const lineItems = items.map((item: any) => {
+      // Nettoyage ou omission des images si elles posent un problème d'URL non valide
+      const imageUrl = item.url_imagen || item.imagen;
+      const validImages = (imageUrl && imageUrl.startsWith('http')) ? [imageUrl] : [];
+
+      return {
+        price_data: {
+          currency: 'eur',
+          product_data: {
+            name: item.nombre_producto || item.nombre || 'Vehículo',
+            ...(validImages.length > 0 && { images: validImages }),
+          },
+          unit_amount: Math.round(Number(item.precio) * 100),
         },
-        unit_amount: Math.round(Number(item.precio) * 100),
-      },
-      quantity: item.cantidad || 1,
-    }));
+        quantity: Number(item.cantidad) || 1,
+      };
+    });
 
-    // 3. Création de la session Stripe
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: lineItems,
@@ -80,9 +69,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     });
   } catch (err: any) {
     console.error('Erreur Stripe session:', err);
-    return new Response(JSON.stringify({ error: err.message || 'Error interno al procesar Stripe' }), {
+    return new Response(JSON.stringify({ error: err.message || 'Error interno' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
   }
 };
+
