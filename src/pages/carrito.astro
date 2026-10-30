@@ -4,48 +4,192 @@ import LayoutBase from '../layouts/LayoutBase.astro';
 ---
 
 <LayoutBase title="Carrito de Compras - Tienda de Coches">
-  <div class="max-w-4xl mx-auto py-6">
-    <h1 class="text-2xl font-extrabold text-white mb-6">Tu Carrito de Compras</h1>
+  <div class="max-w-4xl mx-auto py-6 space-y-6 text-white">
+    <div class="flex items-center justify-between">
+      <h1 class="text-2xl font-extrabold">Tu Carrito de Compras</h1>
+      <button 
+        id="btn-reset-cart" 
+        type="button" 
+        class="px-3 py-1.5 bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-300 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+      >
+        🗑️ Vaciar carrito
+      </button>
+    </div>
 
-    <!-- Modal / Section de Succès de Compra (Masqué par défaut, affiché en JS après commande) -->
+    <!-- Modal de confirmation de commande (affiché si ?success=true) -->
     <div id="modal-exito" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
       <div class="bg-white text-slate-900 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl text-center border border-slate-200">
-        
         <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-600">
           <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
           </svg>
         </div>
-
-        <h3 class="text-2xl font-extrabold text-slate-900 mb-2">¡Compra exitosa!</h3>
+        <h3 class="text-2xl font-extrabold text-slate-900 mb-2">¡Pago exitoso con Stripe!</h3>
         <p class="text-sm text-slate-600 mb-6 leading-relaxed">
-          Muchas gracias por tu compra. Tu pedido se ha registrado correctamente en nuestro sistema y hemos enviado un correo de confirmación.
+          Muchas gracias por tu compra. Tu pago se ha procesado correctamente y tu pedido está en camino.
         </p>
-
         <div class="flex flex-col sm:flex-row gap-3 justify-center">
           <button 
             type="button"
             onclick="window.print()" 
-            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-xl text-xs sm:text-sm transition-all shadow-md shadow-blue-600/20 cursor-pointer flex items-center justify-center gap-1.5"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-xl text-xs sm:text-sm transition-all shadow-md cursor-pointer"
           >
-            <span>🖨️</span> Ver e Imprimir Factura
+            🖨️ Ver Factura
           </button>
-
-          <!-- Bouton Volver al inicio avec redirection stricte vers "/" -->
           <a 
             href="/" 
-            class="bg-black hover:bg-slate-900 text-white font-semibold py-2.5 px-4 rounded-xl text-xs sm:text-sm transition-all shadow-md text-center inline-block"
+            class="bg-black hover:bg-slate-900 text-white font-semibold py-2.5 px-4 rounded-xl text-xs sm:text-sm transition-all text-center inline-block"
           >
             Volver al inicio
           </a>
         </div>
-
       </div>
     </div>
 
-    <!-- Contenu du panier... -->
+    <!-- Conteneur dynamique des articles -->
     <div id="contenedor-carrito" class="space-y-4">
-      <!-- Généré dynamiquement en JS -->
+      <div class="p-8 text-center bg-slate-900/50 rounded-2xl border border-slate-800 text-slate-400 text-sm">
+        Cargando tu carrito...
+      </div>
     </div>
   </div>
 </LayoutBase>
+
+<script>
+  // Vérifier si Stripe a redirigé avec succès
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('success') === 'true') {
+    localStorage.removeItem("cesta");
+    localStorage.removeItem("tienda_coches_carrito");
+    window.dispatchEvent(new Event('cestaUpdated'));
+    
+    window.addEventListener('DOMContentLoaded', () => {
+      const modal = document.getElementById('modal-exito');
+      if (modal) modal.classList.remove('hidden');
+    });
+  }
+
+  function renderCarrito() {
+    const container = document.getElementById('contenedor-carrito');
+    if (!container) return;
+
+    let cesta = [];
+    try {
+      const rawCesta = localStorage.getItem("cesta") || localStorage.getItem("tienda_coches_carrito") || "[]";
+      const parsed = JSON.parse(rawCesta);
+      cesta = Array.isArray(parsed[0]) ? parsed[0] : parsed;
+      if (!Array.isArray(cesta)) cesta = [];
+    } catch (e) {
+      cesta = [];
+    }
+
+    if (cesta.length === 0) {
+      container.innerHTML = `
+        <div class="p-10 text-center bg-slate-900/60 rounded-3xl border border-slate-800/80 space-y-4">
+          <p class="text-slate-400 text-base font-medium">Tu carrito está vacío.</p>
+          <a href="/" class="inline-block px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl transition-colors shadow-md">
+            Explorar catálogo
+          </a>
+        </div>
+      `;
+      return;
+    }
+
+    let total = 0;
+    const itemsHtml = cesta.map((item: any, index: number) => {
+      const precio = Number(item.precio || item.price || 0);
+      const cantidad = Number(item.cantidad || 1);
+      const subtotal = precio * cantidad;
+      total += subtotal;
+
+      const nombre = item.nombre_producto || item.nombre || item.title || 'Vehículo';
+      const imagen = item.url_imagen || item.imagen || '';
+
+      return `
+        <div class="flex items-center justify-between p-4 bg-slate-900/80 rounded-2xl border border-slate-800 gap-4">
+          <div class="flex items-center gap-4">
+            ${imagen ? `<img src="${imagen}" alt="${nombre}" class="w-16 h-12 object-cover rounded-xl border border-slate-800" />` : ''}
+            <div>
+              <h4 class="font-bold text-sm sm:text-base">${nombre}</h4>
+              <p class="text-xs text-slate-400">${precio.toLocaleString('es-ES')} € x ${cantidad}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-4">
+            <span class="font-extrabold text-blue-400 text-sm sm:text-base">${subtotal.toLocaleString('es-ES')} €</span>
+            <button data-index="${index}" class="btn-eliminar p-2 text-red-400 hover:bg-red-950/50 rounded-lg cursor-pointer transition-colors" title="Eliminar">
+              🗑️
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    container.innerHTML = `
+      <div class="space-y-3">
+        ${itemsHtml}
+      </div>
+      <div class="p-5 bg-slate-900/90 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+        <div>
+          <span class="text-xs text-slate-400 block">Total a pagar:</span>
+          <span class="text-2xl font-extrabold">${total.toLocaleString('es-ES')} €</span>
+        </div>
+        <button id="btn-stripe-checkout" class="w-full sm:w-auto px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-indigo-600/20 cursor-pointer flex items-center justify-center gap-2">
+          <span>💳</span> Pagar con Stripe
+        </button>
+      </div>
+    `;
+
+    // Suppression d'un article
+    document.querySelectorAll('.btn-eliminar').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = Number((e.currentTarget as HTMLElement).dataset.index);
+        cesta.splice(idx, 1);
+        localStorage.setItem("cesta", JSON.stringify(cesta));
+        window.dispatchEvent(new Event('cestaUpdated'));
+        renderCarrito();
+      });
+    });
+
+    // Appel de l'API Stripe au clic
+    const btnStripe = document.getElementById('btn-stripe-checkout');
+    if (btnStripe) {
+      btnStripe.addEventListener('click', async () => {
+        btnStripe.textContent = 'Conectando con Stripe...';
+        btnStripe.setAttribute('disabled', 'true');
+
+        try {
+          const response = await fetch('/api/create-stripe-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items: cesta }),
+          });
+
+          const data = await response.json();
+          if (data.url) {
+            window.location.href = data.url; // Redirection vers la page de paiement Stripe
+          } else {
+            throw new Error(data.error || 'Error al crear la sesión de Stripe');
+          }
+        } catch (err: any) {
+          alert('Hubo un error al procesar el pago: ' + err.message);
+          btnStripe.textContent = '💳 Pagar con Stripe';
+          btnStripe.removeAttribute('disabled');
+        }
+      });
+    }
+  }
+
+  // Bouton de réinitialisation d'urgence
+  const btnReset = document.getElementById('btn-reset-cart');
+  if (btnReset) {
+    btnReset.addEventListener('click', () => {
+      localStorage.removeItem("cesta");
+      localStorage.removeItem("tienda_coches_carrito");
+      window.dispatchEvent(new Event('cestaUpdated'));
+      renderCarrito();
+    });
+  }
+
+  renderCarrito();
+  window.addEventListener('cestaUpdated', renderCarrito);
+</script>
