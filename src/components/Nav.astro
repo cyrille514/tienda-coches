@@ -69,10 +69,10 @@ const textoUsuario = nombreUsuario ? `Hola, ${formatNombre(nombreUsuario)}` : 'I
       <a href={nombreUsuario ? "/perfil" : "/login"}
          class="flex items-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl text-black hover:text-white  transition-colors text-[11px] sm:text-sm font-medium  bg-gray-300  border border-gray-300 shrink-0"
          title={nombreUsuario ? "Mi Perfil" : "Identifícate"}>
-        <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
         </svg>
-        <span class="truncate max-w-[60px] sm:max-w-[120px]">{textoUsuario}</span>
+        <span class="font-bold text-xs sm:text-sm hidden sm:inlinetruncate max-w-[60px] sm:max-w-[120px]">{textoUsuario}</span>
       </a>
 
       <div class="relative shrink-0">
