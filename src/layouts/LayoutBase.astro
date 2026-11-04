@@ -101,11 +101,14 @@ if (accessToken && refreshToken) {
     </div>
   </div>
 
-  <footer class="border-t border-slate-800/80 glass-panel mt-auto py-3">
-    <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500">
-      © 2026 LuxeMotors - Tienda de Coches. Todos los derechos reservados.
-    </div>
-  </footer>
+<footer class="bg-slate-950 border-t border-slate-800 py-8 text-center text-slate-400 text-sm">
+     <div class="flex justify-center space-x-6 mb-4">
+       <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" class="hover:text-violet-400 transition-colors text-amber-300">Instagram</a>
+       <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" class="hover:text-violet-400 transition-colors text-amber-300">LinkedIn</a>
+       <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" class="hover:text-violet-400 transition-colors text-amber-300">Facebook</a>
+     </div>
+     <p>© 2026 Tienda de Coches. Todos los derechos reservados.</p>
+</footer>
 
   {!user && <AuthModal />}
 
