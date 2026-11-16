@@ -27,136 +27,226 @@ if (accessToken && refreshToken) {
 ---
 
 <!DOCTYPE html>
-<html lang="es" class="dark">
+<html lang="es" class="dark antialiased selection:bg-blue-500/30 selection:text-blue-200">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
   <title>{title}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col antialiased">
+<body class="bg-zinc-950 text-zinc-100 font-sans min-h-screen flex flex-col overflow-x-hidden">
 
   <Nav />
 
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 w-full flex-1">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 w-full flex-1">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
       
-      <!-- SIDEBAR GAUCHE : Catégories + Dónde estamos + Newsletter -->
-      <aside class="lg:col-span-3 space-y-4">
+      <!-- SIDEBAR IZQUIERDO: Categorías (arriba en móvil/PC) + Info secundaria (solo PC) -->
+      <aside class="lg:col-span-3 w-full min-w-0 space-y-5">
         
-        <!-- Menu Catégories -->
-        <div class="glass-panel p-4 rounded-3xl shadow-xl border border-slate-800/80">
+        <!-- Menú de Categorías -->
+        <section aria-label="Categorías de vehículos" class="bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-4 sm:p-5">
           <MenuCategorias categoriaActivaId={categoriaActivaId} />
-        </div>
+        </section>
 
-        <!-- Dónde Estamos & Carte -->
-        <div class="bg-slate-900/90 backdrop-blur-md p-3.5 rounded-2xl border border-slate-800/80 shadow-lg space-y-2">
-          <div class="flex items-center gap-1.5 text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Dónde Estamos
+        <!-- Dónde Estamos (Visible en escritorio dentro del sidebar) -->
+        <section class="hidden lg:block bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+              Showroom Físico
+            </h3>
+            <span class="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-400">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Abierto
+            </span>
           </div>
-          <p class="text-[11px] text-slate-300 leading-relaxed">
-            Calle Balmes 114, Barcelona.
+          
+          <p class="text-xs text-zinc-300 leading-relaxed">
+            Calle Balmes 114, 08008<br />
+            <span class="text-zinc-500">Barcelona, España</span>
           </p>
-          <div class="w-full h-[80px] rounded-xl overflow-hidden border border-slate-800 shadow-inner">
+
+          <div class="w-full h-24 rounded-lg overflow-hidden border border-zinc-800/90 bg-zinc-900">
             <iframe 
+              title="Ubicación del concesionario en Barcelona"
               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2993.250550505!2d2.155!3d41.391!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDHCsDIzJzI3LjYiTiAywrAwOScxOC4wIkU!5e0!3m2!1ses!2ses!4v1600000000000" 
-              class="w-full h-full border-0 filter contrast-125 invert hue-rotate-180" 
+              class="w-full h-full border-0 filter contrast-125 invert hue-rotate-180 opacity-85 hover:opacity-100 transition-opacity" 
               allowfullscreen="" 
               loading="lazy">
             </iframe>
           </div>
-        </div>
+        </section>
 
-        <!-- Newsletter Exclusiva -->
-        <div class="bg-gradient-to-br from-slate-900/90 to-slate-950/90 backdrop-blur-md p-3.5 rounded-2xl border border-slate-800/80 shadow-lg text-center">
-          <h4 class="font-bold text-blue-400 text-[10px] tracking-wider uppercase mb-1">Newsletter</h4>
-          <p class="text-[10px] text-slate-300 mb-2">
-            Suscríbete y llévate un ticket regalo.
-          </p>
+        <!-- Newsletter (Visible en escritorio dentro del sidebar) -->
+        <section class="hidden lg:block bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-5 space-y-3">
+          <div class="space-y-1">
+            <h3 class="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+              Club Privado
+            </h3>
+            <p class="text-xs text-zinc-400 leading-relaxed">
+              Suscríbete y recibe un ticket regalo para tu próxima reserva.
+            </p>
+          </div>
           
-          <form id="newsletter-form-sidebar" class="w-full space-y-1.5">
+          <form id="newsletter-form-sidebar" class="w-full space-y-2.5 pt-1">
             <input 
               type="email" 
               id="newsletter-email-sb"
-              placeholder="Tu correo" 
-              class="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 text-[11px] focus:outline-none focus:border-blue-500 transition-colors"
+              placeholder="nombre@correo.com" 
+              class="w-full h-9 px-3 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-100 text-xs placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500 transition-colors"
               required
             />
-            <button type="submit" id="newsletter-btn-sb" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-1.5 px-2 rounded-lg transition-all text-[11px] shadow-md cursor-pointer">
-              Suscríbete
+            <button 
+              type="submit" 
+              id="newsletter-btn-sb" 
+              class="w-full h-9 bg-zinc-100 hover:bg-white text-zinc-950 font-semibold px-3 rounded-lg transition-colors text-xs cursor-pointer"
+            >
+              Suscribirse
             </button>
           </form>
-          <p id="newsletter-msg-sb" class="text-[10px] mt-1 hidden"></p>
-        </div>
+          <p id="newsletter-msg-sb" class="text-[11px] pt-0.5 hidden"></p>
+        </section>
 
       </aside>
 
-      <!-- VUE PRINCIPALE -->
-      <main class="lg:col-span-9 w-full">
+      <!-- VISTA PRINCIPAL -->
+      <main class="lg:col-span-9 w-full min-w-0 space-y-8">
         <slot />
+
+        <!-- BLOQUES SECUNDARIOS PARA MÓVIL Y TABLET (< 1024px) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:hidden pt-4 border-t border-zinc-800/80">
+          <!-- Ubicación Móvil/Tablet -->
+          <section class="bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-4 sm:p-5 space-y-3 flex flex-col justify-between">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <h3 class="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+                  Showroom Físico
+                </h3>
+                <span class="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-400">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Abierto
+                </span>
+              </div>
+              <p class="text-xs text-zinc-300">
+                Calle Balmes 114, 08008 Barcelona.
+              </p>
+            </div>
+            <div class="w-full h-24 rounded-lg overflow-hidden border border-zinc-800 bg-zinc-900">
+              <iframe 
+                title="Mapa showroom móvil"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2993.250550505!2d2.155!3d41.391!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDHCsDIzJzI3LjYiTiAywrAwOScxOC4wIkU!5e0!3m2!1ses!2ses!4v1600000000000" 
+                class="w-full h-full border-0 filter contrast-125 invert hue-rotate-180 opacity-85" 
+                allowfullscreen="" 
+                loading="lazy">
+              </iframe>
+            </div>
+          </section>
+
+          <!-- Newsletter Móvil/Tablet (Conectado al mismo script) -->
+          <section class="bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-4 sm:p-5 space-y-3 flex flex-col justify-between">
+            <div class="space-y-1">
+              <h3 class="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+                Club Privado
+              </h3>
+              <p class="text-xs text-zinc-400 leading-relaxed">
+                Suscríbete y llévate un ticket regalo en tu primera reserva.
+              </p>
+            </div>
+            
+            <form id="newsletter-form-mobile" class="w-full space-y-2.5">
+              <input 
+                type="email" 
+                id="newsletter-email-mb"
+                placeholder="Tu correo electrónico" 
+                class="w-full h-10 px-3 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-100 text-base sm:text-xs placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500 transition-colors"
+                required
+              />
+              <button 
+                type="submit" 
+                id="newsletter-btn-mb" 
+                class="w-full h-10 bg-zinc-100 hover:bg-white text-zinc-950 font-semibold px-3 rounded-lg transition-colors text-xs cursor-pointer"
+              >
+                Suscribirse
+              </button>
+              <p id="newsletter-msg-mb" class="text-[11px] hidden"></p>
+            </form>
+          </section>
+        </div>
       </main>
 
     </div>
   </div>
 
-<footer class="bg-slate-950 border-t border-slate-800 py-8 text-center text-slate-400 text-sm">
-     <div class="flex justify-center space-x-6 mb-4">
-       <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" class="hover:text-violet-400 transition-colors text-amber-300">Instagram</a>
-       <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" class="hover:text-violet-400 transition-colors text-amber-300">LinkedIn</a>
-       <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" class="hover:text-violet-400 transition-colors text-amber-300">Facebook</a>
-     </div>
-     <p>© 2026 Tienda de Coches. Todos los derechos reservados.</p>
-</footer>
+  <!-- FOOTER MINIMALISTA Y ADAPTABLE -->
+  <footer class="bg-zinc-950 border-t border-zinc-800/80 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
+      <p>© 2026 Tienda de Coches. Todos los derechos reservados.</p>
+      
+      <div class="flex items-center gap-6">
+        <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" class="text-zinc-400 hover:text-zinc-100 transition-colors">
+          Instagram
+        </a>
+        <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" class="text-zinc-400 hover:text-zinc-100 transition-colors">
+          LinkedIn
+        </a>
+        <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" class="text-zinc-400 hover:text-zinc-100 transition-colors">
+          Facebook
+        </a>
+      </div>
+    </div>
+  </footer>
 
   {!user && <AuthModal />}
 
   <script>
     import { supabase } from '@/lib/supabase';
 
-    const formSb = document.getElementById('newsletter-form-sidebar') as HTMLFormElement;
-    const emailInputSb = document.getElementById('newsletter-email-sb') as HTMLInputElement;
-    const msgElSb = document.getElementById('newsletter-msg-sb');
-    const btnSb = document.getElementById('newsletter-btn-sb') as HTMLButtonElement;
+    function initNewsletterForm(formId: string, inputId: string, msgId: string, btnId: string) {
+      const form = document.getElementById(formId) as HTMLFormElement | null;
+      const emailInput = document.getElementById(inputId) as HTMLInputElement | null;
+      const msgEl = document.getElementById(msgId);
+      const btn = document.getElementById(btnId) as HTMLButtonElement | null;
 
-    if (formSb) {
-      formSb.addEventListener('submit', async (e) => {
+      if (!form || !emailInput) return;
+
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const email = emailInputSb.value.trim();
+        const email = emailInput.value.trim();
         if (!email) return;
 
-        if (btnSb) {
-          btnSb.textContent = 'Enviando...';
-          btnSb.setAttribute('disabled', 'true');
+        if (btn) {
+          btn.textContent = 'Enviando...';
+          btn.setAttribute('disabled', 'true');
         }
 
         try {
           const { error } = await supabase.from('suscriptores').insert([{ email }]);
           if (error) {
-            if (error.code === '23505') throw new Error('Ya registrado.');
-            throw new Error('Error.');
+            if (error.code === '23505') throw new Error('Ya estás registrado.');
+            throw new Error('Error al suscribir.');
           }
-          if (msgElSb) {
-            msgElSb.textContent = '¡Suscrito!';
-            msgElSb.className = 'text-[10px] mt-1 text-emerald-400 font-medium';
-            msgElSb.classList.remove('hidden');
+          if (msgEl) {
+            msgEl.textContent = '¡Suscrito correctamente!';
+            msgEl.className = 'text-[11px] pt-1 text-emerald-400 font-medium block';
           }
-          formSb.reset();
+          form.reset();
         } catch (err: any) {
-          if (msgElSb) {
-            msgElSb.textContent = err.message || 'Error.';
-            msgElSb.className = 'text-[10px] mt-1 text-red-400 font-medium';
-            msgElSb.classList.remove('hidden');
+          if (msgEl) {
+            msgEl.textContent = err.message || 'Error al procesar.';
+            msgEl.className = 'text-[11px] pt-1 text-red-400 font-medium block';
           }
         } finally {
-          if (btnSb) {
-            btnSb.textContent = 'Suscríbete';
-            btnSb.removeAttribute('disabled');
+          if (btn) {
+            btn.textContent = 'Suscribirse';
+            btn.removeAttribute('disabled');
           }
         }
       });
     }
+
+    initNewsletterForm('newsletter-form-sidebar', 'newsletter-email-sb', 'newsletter-msg-sb', 'newsletter-btn-sb');
+    initNewsletterForm('newsletter-form-mobile', 'newsletter-email-mb', 'newsletter-msg-mb', 'newsletter-btn-mb');
   </script>
 </body>
 </html>
+

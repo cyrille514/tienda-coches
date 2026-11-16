@@ -12,19 +12,15 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/vercel": "11.0.15",
+    "@astrojs/vercel": "^8.0.0",
     "@supabase/supabase-js": "^2.116.0",
     "@tailwindcss/vite": "^4.3.3",
-    "astro": "^7.3.8",
+    "astro": "^5.0.0",
     "pg": "^8.23.0",
     "stripe": "^23.0.0",
     "tailwindcss": "^4.3.3"
   },
-  "allowScripts": {
-    "esbuild": true
-  },
   "devDependencies": {
-    "@types/pg": "^8.23.1",
-    "@types/stripe": "^8.0.417"
+    "@types/pg": "^8.23.1"
   }
 }

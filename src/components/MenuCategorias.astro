@@ -1,15 +1,28 @@
 ---
 // src/components/MenuCategorias.astro
 import '../styles/global.css';
-import { supabase } from '../lib/supabase';
+import { pool } from '../lib/db';
 
-const { data: categoriasData } = await supabase
-  .from('categorias')
-  .select('*')
-  .order('pk_categoria', { ascending: true });
+interface Categoria {
+  pk_categoria: number;
+  nom_categoria: string;
+  descripcion_categoria?: string;
+}
 
-const categorias = (categoriasData && categoriasData.length > 0) 
-  ? categoriasData 
+let categoriasData: Categoria[] = [];
+
+try {
+  // Consulta SQL nativa mediante Pool de PostgreSQL (Cumple Factor 2 y 3)
+  const result = await pool.query<Categoria>(
+    'SELECT pk_categoria, nom_categoria, descripcion_categoria FROM categorias ORDER BY pk_categoria ASC'
+  );
+  categoriasData = result.rows;
+} catch (error) {
+  console.error('Error al cargar categorías desde PostgreSQL:', error);
+}
+
+const categorias: Categoria[] = (categoriasData && categoriasData.length > 0)
+  ? categoriasData
   : [
       { pk_categoria: 1, nom_categoria: 'Volvo', descripcion_categoria: 'Gama de vehículos Volvo de última generación' },
       { pk_categoria: 2, nom_categoria: 'BMW', descripcion_categoria: 'Vehículos BMW de alto rendimiento' },
@@ -18,40 +31,70 @@ const categorias = (categoriasData && categoriasData.length > 0)
       { pk_categoria: 5, nom_categoria: 'Peugeot', descripcion_categoria: 'Diseño innovador y tecnología Peugeot' }
     ];
 
+interface Props {
+  categoriaActivaId?: number | string;
+}
+
 const { categoriaActivaId } = Astro.props;
 const activaId = Number(categoriaActivaId);
 ---
 
-<nav class="space-y-1.5">
-  <div class="flex items-center justify-between px-2 mb-2">
-    <h3 class="text-[11px] font-bold uppercase tracking-wider text-violet-500">Marcas & Categorías</h3>
+<nav aria-label="Marcas y categorías" class="space-y-3">
+  <div class="flex items-center justify-between px-1">
+    <h3 class="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+      Marcas & Categorías
+    </h3>
+    <span class="text-[10px] font-mono text-zinc-500 lg:hidden">Desliza →</span>
   </div>
 
-  <ul class="space-y-1">
+  <!-- Horizontal en móvil/tablet, vertical en escritorio -->
+  <ul class="flex lg:flex-col gap-1.5 overflow-x-auto pb-1.5 lg:pb-0">
+    <!-- Opción para ver todo el catálogo -->
+    <li class="shrink-0 lg:shrink">
+      <a
+        href="/productos"
+        class={`flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-xs transition-all duration-150 group ${
+          !activaId || Number.isNaN(activaId)
+            ? 'bg-zinc-100 text-zinc-950 font-semibold shadow-sm'
+            : 'text-zinc-400 bg-zinc-950/60 lg:bg-transparent border border-zinc-800/80 lg:border-transparent hover:bg-zinc-800/70 hover:text-zinc-100 font-medium'
+        }`}
+      >
+        <span>Todos los modelos</span>
+        <span class={`text-[10px] font-mono ${!activaId || Number.isNaN(activaId) ? 'text-zinc-700' : 'text-zinc-600'}`}>
+          ALL
+        </span>
+      </a>
+    </li>
+
     {categorias.map((cat) => {
-      const idCat = cat.pk_categoria || cat.id;
-      const nombreCat = cat.nom_categoria || cat.nombre;
+      const idCat = cat.pk_categoria;
+      const nombreCat = cat.nom_categoria;
       const esActivo = idCat === activaId;
-      
+
       return (
-        <li>
-          <a 
+        <li class="shrink-0 lg:shrink">
+          <a
             href={`/productos?categoria=${idCat}`}
             title={cat.descripcion_categoria || nombreCat}
-            class={`flex items-center justify-between px-3 py-1.5 rounded-xl font-medium text-xs transition-all duration-200 group ${
-              esActivo 
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-semibold' 
-                : 'text-slate-300 hover:bg-slate-800/80 hover:text-white border border-transparent hover:border-slate-700/50'
+            class={`flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-xs transition-all duration-150 group ${
+              esActivo
+                ? 'bg-zinc-100 text-zinc-950 font-semibold shadow-sm'
+                : 'text-zinc-400 bg-zinc-950/60 lg:bg-transparent border border-zinc-800/80 lg:border-transparent hover:bg-zinc-800/70 hover:text-zinc-100 font-medium'
             }`}
           >
-            <span>{nombreCat}</span>
-            <svg 
-              class={`w-3.5 h-3.5 transition-transform duration-200 ${esActivo ? 'translate-x-1 text-white' : 'text-slate-500 group-hover:translate-x-1 group-hover:text-slate-300'}`} 
-              fill="none" 
-              viewBox="0 0 24 24" 
+            <span class="truncate">{nombreCat}</span>
+            <svg
+              class={`w-3.5 h-3.5 shrink-0 transition-transform duration-150 ${
+                esActivo
+                  ? 'translate-x-0.5 text-zinc-950'
+                  : 'text-zinc-600 group-hover:translate-x-0.5 group-hover:text-zinc-300'
+              }`}
+              fill="none"
+              viewBox="0 0 24 24"
               stroke="currentColor"
+              stroke-width="2"
             >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </a>
         </li>

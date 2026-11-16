@@ -5,132 +5,73 @@ import { supabase } from '@/lib/supabase';
 const accessToken = Astro.cookies.get('sb-access-token');
 const refreshToken = Astro.cookies.get('sb-refresh-token');
 
-let nombreUsuario = null;
-
+let userEmail = null;
 if (accessToken && refreshToken) {
-  const { data, error } = await supabase.auth.setSession({
+  const { data } = await supabase.auth.setSession({
     access_token: accessToken.value,
     refresh_token: refreshToken.value,
   });
-
-  if (data.user && !error) {
-    nombreUsuario = 
-      data.user.user_metadata?.full_name || 
-      data.user.user_metadata?.nombre || 
-      data.user.email;
-  }
+  if (data.user) userEmail = data.user.email;
 }
-
-const formatNombre = (nombre: string) => {
-  if (!nombre) return '';
-  if (nombre.includes('@')) return nombre.split('@')[0];
-  return nombre.length > 8 ? nombre.substring(0, 6) + '...' : nombre;
-};
-
-const textoUsuario = nombreUsuario ? `Hola, ${formatNombre(nombreUsuario)}` : 'Identifícate';
 ---
 
-<header class="sticky top-0 z-50 glass-panel border-b border-slate-800/80 bg-slate-950/95 backdrop-blur-md">
-  <div class="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-2">
+<header class="sticky top-0 z-40 w-full bg-zinc-950/85 backdrop-blur-md border-b border-zinc-800/80">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
     
-    <!-- GAUCHE : Logo + Bouton Salir (avec redirection vers '/') -->
-    <div class="flex items-center gap-3 shrink-0">
-      <a href="/" class="flex items-center gap-1 group shrink-0">
-        <div>
-          <span class="text-sm sm:text-xl font-extrabold tracking-tight text-white block leading-none">
-            TIENDA<span class="text-blue-500">COCHES</span>
-          </span>
-          <span class="text-[7px] sm:text-[10px] tracking-widest text-slate-400 uppercase font-semibold block mt-0.5">Showroom</span>
-        </div>
-      </a>
+    <!-- Marca -->
+    <a href="/" class="flex items-center gap-2.5 shrink-0 group">
+      <div class="w-8 h-8 rounded-lg bg-zinc-100 text-zinc-950 flex items-center justify-center font-bold text-sm tracking-tighter group-hover:bg-white transition-colors">
+        TC
+      </div>
+      <div class="flex flex-col">
+        <span class="text-sm font-semibold tracking-tight text-zinc-100 leading-none">
+          TIENDACOCHES
+        </span>
+        <span class="text-[10px] font-medium tracking-widest text-zinc-500 uppercase mt-0.5">
+          Showroom
+        </span>
+      </div>
+    </a>
 
-      {nombreUsuario && (
-        <button 
-          id="btn-signout"
-          class="px-2 sm:px-3 py-1.5 text-[11px] sm:text-xs rounded-xl font-medium text-red-400 bg-red-950/40 hover:bg-red-900/50 border border-red-900/50 transition-colors shrink-0 cursor-pointer"
-          title="Cerrar sesión"
+    <!-- Enlaces de navegación (Escritorio) -->
+    <nav class="hidden lg:flex items-center gap-8 text-sm font-medium text-zinc-400">
+      <a href="/" class="hover:text-zinc-100 transition-colors">Catálogo</a>
+      <a href="#ubicacion" class="hover:text-zinc-100 transition-colors">Concesionario</a>
+      <a href="#newsletter" class="hover:text-zinc-100 transition-colors">Club Privado</a>
+    </nav>
+
+    <!-- Acciones de Usuario y Carrito -->
+    <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+      {userEmail ? (
+        <a 
+          href="/perfil" 
+          class="h-10 px-3 sm:px-4 rounded-lg border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-xs sm:text-sm font-medium text-zinc-200 flex items-center gap-2 transition-colors max-w-[140px] sm:max-w-[200px]"
         >
-          Salir
+          <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+          <span class="truncate">{userEmail}</span>
+        </a>
+      ) : (
+        <button 
+          id="open-auth-modal"
+          class="h-10 px-3.5 sm:px-4 rounded-lg border border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800 hover:border-zinc-700 text-xs sm:text-sm font-medium text-zinc-200 flex items-center gap-2 transition-all cursor-pointer"
+        >
+          <svg class="w-4 h-4 text-zinc-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+          </svg>
+          <span>Identíficate</span>
         </button>
       )}
-    </div>
 
-
-    <!-- DROITE : Profil, Carrito -->
-    <div class="flex items-center gap-1 sm:gap-2">
-      <a href={nombreUsuario ? "/perfil" : "/login"}
-         class="flex items-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl text-black transition-colors text-[11px] sm:text-sm font-medium  bg-gray-300  border border-gray-300 shrink-0"
-         title={nombreUsuario ? "Mi Perfil" : "Identifícate"}>
-        <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+      <a 
+        href="/carrito" 
+        class="h-10 px-3.5 sm:px-4 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shadow-sm"
+      >
+        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z" />
         </svg>
-        <span class="truncate max-w-[60px] sm:max-w-[120px]">{textoUsuario}</span>
+        <span class="hidden sm:inline">Carrito</span>
       </a>
-
-      <div class="relative shrink-0">
-        <a href="/carrito" class="relative flex items-center gap-1 px-2 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-gray-300  text-black  border-gray-300 transition-all group" aria-label="Ver Cesta">
-          <svg class="w-3.5 h-3.5 sm:w-5 sm:h-5 text-blue-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-          </svg>
-          <span class="font-bold text-xs sm:text-sm hidden sm:inline">Carrito</span>
-          
-          <span 
-            id="cart-badge"
-            class="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[10px] font-bold rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center shadow-md hidden"
-          >
-            0
-          </span>
-        </a>
-      </div>
-
-      {nombreUsuario && (
-        <a href="/perfil" class="hidden sm:inline-flex px-3 py-2 text-sm rounded-xl font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-sm shadow-blue-500/20 shrink-0">
-          Perfil
-        </a>
-      )}
     </div>
+
   </div>
 </header>
-
-<script>
-  import { supabase } from '@/lib/supabase';
-
-  // Gestion du bouton Salir avec redirection stricte vers la racine "/"
-  const btnSignout = document.getElementById('btn-signout');
-  if (btnSignout) {
-    btnSignout.addEventListener('click', async () => {
-      await supabase.auth.signOut();
-      
-      // Suppression des cookies de session
-      document.cookie = 'sb-access-token=; path=/; max-age=0;';
-      document.cookie = 'sb-refresh-token=; path=/; max-age=0;';
-      
-      // Redirection directe vers la page d'accueil principale
-      window.location.href = '/';
-    });
-  }
-
-  const updateCartBadge = () => {
-    const badge = document.getElementById("cart-badge");
-    if (!badge) return;
-
-    try {
-      const rawCesta = localStorage.getItem("cesta") || localStorage.getItem("tienda_coches_carrito") || "[]";
-      const cesta = JSON.parse(rawCesta);
-      const totalItems = cesta.reduce((acc: any, item: any) => acc + (item.cantidad || 1), 0);
-
-      if (totalItems > 0) {
-        badge.textContent = totalItems.toString();
-        badge.classList.remove("hidden");
-      } else {
-        badge.classList.add("hidden");
-      }
-    } catch (error) {
-      console.error("Error al actualizar el badge:", error);
-    }
-  };
-
-  document.addEventListener("DOMContentLoaded", updateCartBadge);
-  window.addEventListener("cestaUpdated", updateCartBadge);
-  window.addEventListener("storage", updateCartBadge);
-</script>
