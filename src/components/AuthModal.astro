@@ -91,7 +91,6 @@
   const googleLoginView = document.getElementById('google-login-view');
   const registerView = document.getElementById('register-view');
 
-  // Ouvrir le modal
   userBtn?.addEventListener('click', (e) => {
     e.preventDefault();
     googleLoginView?.classList.remove('hidden');
@@ -101,7 +100,6 @@
     modal?.showModal();
   });
 
-  // Fermer le modal
   closeBtn?.addEventListener('click', () => modal?.close());
 
   modal?.addEventListener('click', (e) => {
@@ -111,7 +109,6 @@
     }
   });
 
-  // Basculer vers l'inscription
   goToRegisterBtn?.addEventListener('click', () => {
     googleLoginView?.classList.remove('flex');
     googleLoginView?.classList.add('hidden');
@@ -119,7 +116,6 @@
     registerView?.classList.add('flex');
   });
 
-  // Revenir au login Google
   backToLoginBtn?.addEventListener('click', () => {
     registerView?.classList.remove('flex');
     registerView?.classList.add('hidden');
@@ -127,7 +123,6 @@
     googleLoginView?.classList.add('flex');
   });
 
-  // Connexion Google OAuth (Corrigé et complété)
   googleBtn?.addEventListener('click', async () => {
     if (!googleBtn) return;
     googleBtn.textContent = 'Conectando...';
@@ -147,7 +142,6 @@
     }
   });
 
-  // Gestion de l'inscription classique par email/mot de passe
   registroForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const emailInput = document.getElementById('reg-email') as HTMLInputElement;

@@ -58,20 +58,69 @@ if (accessToken && refreshToken) {
           <svg class="w-4 h-4 text-zinc-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
           </svg>
-          <span>Identíficate</span>
+          <span>Identifícate</span>
         </button>
       )}
 
       <a 
         href="/carrito" 
-        class="h-10 px-3.5 sm:px-4 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shadow-sm"
+        class="h-10 px-3.5 sm:px-4 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shadow-sm relative"
       >
         <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z" />
         </svg>
         <span class="hidden sm:inline">Carrito</span>
+        <!-- Badge dynamique du panier -->
+        <span id="cart-badge" class="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-md hidden">
+          0
+        </span>
       </a>
     </div>
 
   </div>
 </header>
+
+<script>
+  import { supabase } from '@/lib/supabase';
+
+  // 1. Gestion de l'authentification OAuth (cookies SSR)
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
+      document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=31536000; SameSite=Lax`;
+      document.cookie = `sb-refresh-token=${session.refresh_token}; path=/; max-age=31536000; SameSite=Lax`;
+      window.location.href = window.location.pathname;
+    }
+  });
+
+  // 2. Mise à jour dynamique du compteur du panier
+  function updateNavCartCount() {
+    const badge = document.getElementById('cart-badge');
+    if (!badge) return;
+
+    try {
+      const rawCesta = localStorage.getItem("cesta") || localStorage.getItem("tienda_coches_carrito") || "[]";
+      const parsed = JSON.parse(rawCesta);
+      const cesta = Array.isArray(parsed[0]) ? parsed[0] : parsed;
+      
+      const totalItems = Array.isArray(cesta) 
+        ? cesta.reduce((acc, item) => acc + Number(item.cantidad || 1), 0) 
+        : 0;
+
+      if (totalItems > 0) {
+        badge.textContent = totalItems.toString();
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    } catch (e) {
+      badge.classList.add('hidden');
+    }
+  }
+
+  // Exécuter au chargement et écouter les changements
+  document.addEventListener('DOMContentLoaded', updateNavCartCount);
+  window.addEventListener('cestaUpdated', updateNavCartCount);
+  
+  // Vérification immédiate au cas où le DOM est déjà chargé
+  updateNavCartCount();
+</script>

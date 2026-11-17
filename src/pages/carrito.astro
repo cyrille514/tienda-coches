@@ -178,7 +178,7 @@ import LayoutBase from '../layouts/LayoutBase.astro';
 
           const data = await response.json();
           if (data.url) {
-            window.location.href = data.url; // Redirección a la pasarela de Stripe
+            window.location.href = data.url;
           } else {
             throw new Error(data.error || 'Error al crear la sesión de Stripe');
           }
