@@ -83,12 +83,16 @@ if (accessToken && refreshToken) {
 <script>
   import { supabase } from '@/lib/supabase';
 
-  // 1. Gestion de l'authentification OAuth (cookies SSR)
+  // 1. Intercepte le retour Google OAuth UNE SEULE FOIS pour éviter les boucles infinies
   supabase.auth.onAuthStateChange(async (event, session) => {
     if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
-      document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=31536000; SameSite=Lax`;
-      document.cookie = `sb-refresh-token=${session.refresh_token}; path=/; max-age=31536000; SameSite=Lax`;
-      window.location.href = window.location.pathname;
+      const hasCookie = document.cookie.includes('sb-access-token');
+      
+      if (!hasCookie) {
+        document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=31536000; SameSite=Lax`;
+        document.cookie = `sb-refresh-token=${session.refresh_token}; path=/; max-age=31536000; SameSite=Lax`;
+        window.location.href = window.location.pathname;
+      }
     }
   });
 
@@ -117,10 +121,7 @@ if (accessToken && refreshToken) {
     }
   }
 
-  // Exécuter au chargement et écouter les changements
   document.addEventListener('DOMContentLoaded', updateNavCartCount);
   window.addEventListener('cestaUpdated', updateNavCartCount);
-  
-  // Vérification immédiate au cas où le DOM est déjà chargé
   updateNavCartCount();
 </script>
