@@ -1,0 +1,90 @@
+---
+// src/pages/admin/estadisticas.astro
+import LayoutBase from '../../layouts/LayoutBase.astro';
+import { pool } from '../../lib/db';
+
+let totalVentas = 0;
+let ingresosTotales = 0;
+let totalClientes = 0;
+let totalProductos = 0;
+
+try {
+  // 1. Chiffre d'affaires total et nombre total de factures/commandes
+  const ventasRes = await pool.query('SELECT COUNT(*) as total_facturas, COALESCE(SUM(total), 0) as ingresos FROM facturas');
+  totalVentas = parseInt(ventasRes.rows[0].total_facturas, 10);
+  ingresosTotales = parseFloat(ventasRes.rows[0].ingresos);
+
+  // 2. Nombre total de clients
+  const clientesRes = await pool.query('SELECT COUNT(*) as total FROM clientes');
+  totalClientes = parseInt(clientesRes.rows[0].total, 10);
+
+  // 3. Nombre total de véhicules en stock
+  const productosRes = await pool.query('SELECT COUNT(*) as total FROM productos');
+  totalProductos = parseInt(productosRes.rows[0].total, 10);
+
+} catch (error) {
+  console.error('Error al cargar las estadísticas:', error);
+}
+---
+
+<LayoutBase title="Estadísticas y Métricas - Tienda Coches">
+  <div class="max-w-6xl mx-auto space-y-8 py-6">
+    
+    <!-- En-tête -->
+    <div class="border-b border-zinc-800 pb-5">
+      <span class="text-xs font-semibold uppercase tracking-widest text-zinc-400">Panel de Administración</span>
+      <h1 class="text-2xl sm:text-3xl font-bold text-white mt-1">Estadísticas y Rendimiento</h1>
+      <p class="text-xs sm:text-sm text-zinc-400 mt-1">Métricas clave en tiempo real conectadas a PostgreSQL.</p>
+    </div>
+
+    <!-- Grille de cartes de statistiques -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      
+      <!-- Chiffre d'affaires -->
+      <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl shadow-sm space-y-2">
+        <span class="text-xs font-medium text-zinc-400 uppercase tracking-wider">Ingresos Totales</span>
+        <div class="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+          {ingresosTotales.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+        </div>
+        <p class="text-[11px] text-zinc-500">Calculado sobre facturas emitidas</p>
+      </div>
+
+      <!-- Total Commandes -->
+      <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl shadow-sm space-y-2">
+        <span class="text-xs font-medium text-zinc-400 uppercase tracking-wider">Ventas Realizadas</span>
+        <div class="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+          {totalVentas}
+        </div>
+        <p class="text-[11px] text-zinc-500">Transacciones completadas via Stripe</p>
+      </div>
+
+      <!-- Total Clients -->
+      <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl shadow-sm space-y-2">
+        <span class="text-xs font-medium text-zinc-400 uppercase tracking-wider">Clientes Registrados</span>
+        <div class="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+          {totalClientes}
+        </div>
+        <p class="text-[11px] text-zinc-500">Perfiles activos en la base de datos</p>
+      </div>
+
+      <!-- Total Véhicules -->
+      <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl shadow-sm space-y-2">
+        <span class="text-xs font-medium text-zinc-400 uppercase tracking-wider">Vehículos en Stock</span>
+        <div class="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+          {totalProductos}
+        </div>
+        <p class="text-[11px] text-zinc-500">Modelos disponibles en el catálogo</p>
+      </div>
+
+    </div>
+
+    <!-- Section d'actions / retour -->
+    <div class="pt-4 flex items-center justify-between border-t border-zinc-800">
+      <a href="/" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 rounded-xl text-xs font-medium transition-colors">
+        ← Volver al Catálogo
+      </a>
+      <span class="text-xs text-zinc-500">Actualizado dinámicamente vía SSR</span>
+    </div>
+
+  </div>
+</LayoutBase>
