@@ -41,10 +41,10 @@ const activaId = Number(categoriaActivaId);
 
 <nav aria-label="Marcas y categorías" class="space-y-3">
   <div class="flex items-center justify-between px-1">
-    <h3 class="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+    <h3 class="text-[11px] font-semibold uppercase tracking-wider text-violet-400">
       Marcas & Categorías
     </h3>
-    <span class="text-[10px] font-mono text-zinc-500 lg:hidden">Desliza →</span>
+    <span class="text-[10px] font-mono text-violet-400 lg:hidden">Desliza →</span>
   </div>
 
   <!-- Horizontal en móvil/tablet, vertical en escritorio -->
@@ -56,11 +56,11 @@ const activaId = Number(categoriaActivaId);
         class={`flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-xs transition-all duration-150 group ${
           !activaId || Number.isNaN(activaId)
             ? 'bg-zinc-100 text-zinc-950 font-semibold shadow-sm'
-            : 'text-zinc-400 bg-zinc-950/60 lg:bg-transparent border border-zinc-800/80 lg:border-transparent hover:bg-zinc-800/70 hover:text-zinc-100 font-medium'
+            : 'text-violet-400 bg-zinc-950/60 lg:bg-transparent border border-zinc-800/80 lg:border-transparent hover:bg-zinc-800/70 hover:text-zinc-100 font-medium'
         }`}
       >
         <span>Todos los modelos</span>
-        <span class={`text-[10px] font-mono ${!activaId || Number.isNaN(activaId) ? 'text-zinc-700' : 'text-zinc-600'}`}>
+        <span class={`text-[10px] font-mono ${!activaId || Number.isNaN(activaId) ? 'text-green-400' : 'text-green-600'}`}>
           ALL
         </span>
       </a>
