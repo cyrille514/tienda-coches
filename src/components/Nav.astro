@@ -1,18 +1,13 @@
 ---
 // src/components/Nav.astro
-import { supabase } from '@/lib/supabase';
-
-const accessToken = Astro.cookies.get('sb-access-token');
-const refreshToken = Astro.cookies.get('sb-refresh-token');
-
-let userEmail = null;
-if (accessToken && refreshToken) {
-  const { data } = await supabase.auth.setSession({
-    access_token: accessToken.value,
-    refresh_token: refreshToken.value,
-  });
-  if (data.user) userEmail = data.user.email;
+interface Props {
+  user?: {
+    email?: string;
+  } | null;
 }
+
+const { user } = Astro.props;
+const userEmail = user?.email || null;
 ---
 
 <header class="sticky top-0 z-40 w-full bg-zinc-950/85 backdrop-blur-md border-b border-zinc-800/80">
@@ -33,8 +28,6 @@ if (accessToken && refreshToken) {
       </div>
     </a>
 
-    <!-- [SUPPRIMÉ] Les liens de navigation (Catálogo, Concesionario, Club Privado) ont été retirés d'ici -->
-
     <!-- Acciones de Usuario y Carrito -->
     <div class="flex items-center gap-2 sm:gap-3 shrink-0">
       {userEmail ? (
@@ -48,9 +41,9 @@ if (accessToken && refreshToken) {
       ) : (
         <button 
           id="open-auth-modal"
-          class="h-10 px-3.5 sm:px-4 rounded-lg border border-gray-200 bg-white hover:bg-violet-400 hover:border-zinc-700 text-xl sm:text-sm font-medium text-black flex items-center gap-2 transition-all cursor-pointer"
+          class="h-10 px-3.5 sm:px-4 rounded-lg border border-gray-200 bg-white hover:bg-violet-400 hover:border-zinc-700 text-xs sm:text-sm font-medium text-black flex items-center gap-2 transition-all cursor-pointer"
         >
-          <svg class="w-4 h-4 text-violet-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
+          <svg class="w-4 h-4 text-violet-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
           </svg>
           <span>Identifícate</span>
@@ -76,22 +69,6 @@ if (accessToken && refreshToken) {
 </header>
 
 <script>
-  import { supabase } from '@/lib/supabase';
-
-  // 1. Intercepte le retour Google OAuth UNE SEULE FOIS pour éviter les boucles infinies
-  supabase.auth.onAuthStateChange(async (event, session) => {
-    if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
-      const hasCookie = document.cookie.includes('sb-access-token');
-      
-      if (!hasCookie) {
-        document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=31536000; SameSite=Lax`;
-        document.cookie = `sb-refresh-token=${session.refresh_token}; path=/; max-age=31536000; SameSite=Lax`;
-        window.location.href = window.location.pathname;
-      }
-    }
-  });
-
-  // 2. Mise à jour dynamique du compteur du panier
   function updateNavCartCount() {
     const badge = document.getElementById('cart-badge');
     if (!badge) return;

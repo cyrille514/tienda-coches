@@ -38,7 +38,7 @@ if (accessToken && refreshToken) {
 </head>
 <body class="bg-zinc-950 text-zinc-100 font-sans min-h-screen flex flex-col overflow-x-hidden">
 
-  <Nav />
+  <Nav user={user} />
 
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 w-full flex-1">
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
@@ -201,6 +201,33 @@ if (accessToken && refreshToken) {
   <script>
     import { supabase } from '@/lib/supabase';
 
+    function setAuthCookies(accessToken: string, refreshToken: string) {
+      const maxAge = 60 * 60 * 24 * 7; // 7 jours
+      const secureFlag = window.location.protocol === 'https:' ? '; Secure' : '';
+      document.cookie = `sb-access-token=${accessToken}; path=/; max-age=${maxAge}; SameSite=Lax${secureFlag}`;
+      document.cookie = `sb-refresh-token=${refreshToken}; path=/; max-age=${maxAge}; SameSite=Lax${secureFlag}`;
+    }
+
+    function clearAuthCookies() {
+      document.cookie = 'sb-access-token=; path=/; max-age=0';
+      document.cookie = 'sb-refresh-token=; path=/; max-age=0';
+      document.cookie = 'sb-session-synced=; path=/; max-age=0';
+    }
+
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION')) {
+        setAuthCookies(session.access_token, session.refresh_token);
+
+        if (event === 'SIGNED_IN' && !document.cookie.includes('sb-session-synced=1')) {
+          document.cookie = 'sb-session-synced=1; path=/; max-age=10';
+          window.location.reload();
+        }
+      } else if (event === 'SIGNED_OUT') {
+        clearAuthCookies();
+        window.location.reload();
+      }
+    });
+
     function initNewsletterForm(formId: string, inputId: string, msgId: string, btnId: string) {
       const form = document.getElementById(formId) as HTMLFormElement | null;
       const emailInput = document.getElementById(inputId) as HTMLInputElement | null;
@@ -249,4 +276,3 @@ if (accessToken && refreshToken) {
   </script>
 </body>
 </html>
-
