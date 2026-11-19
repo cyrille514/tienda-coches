@@ -2,91 +2,100 @@
 // src/pages/exito.astro
 import "../styles/global.css";
 import LayoutBase from "../layouts/LayoutBase.astro";
-import { crearFactura } from '../lib/facturas'; 
-import { enviarEmailFactura } from '../lib/brevo'; 
-import Stripe from 'stripe';
+import { crearFactura } from "../lib/facturas";
+import { enviarEmailFactura } from "../lib/brevo";
+import Stripe from "stripe";
 
-const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY || '');
-const sessionId = Astro.url.searchParams.get('session_id');
+const stripeSecretKey = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY || "";
+const sessionId = Astro.url.searchParams.get("session_id");
 
 let pagoExitoso = false;
-let errorMessage = '';
+let errorMessage = "";
 let facturaId: number | null = null;
+let esNuevaFactura = false;
 
-if (!sessionId) {
-  errorMessage = 'No se encontró una sesión de pago válida.';
+if (!stripeSecretKey) {
+  errorMessage = "Configuración de pago no disponible en el servidor.";
+} else if (!sessionId) {
+  errorMessage = "No se encontró una sesión de pago válida.";
 } else {
   try {
+    const stripe = new Stripe(stripeSecretKey);
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
-    if (session.payment_status === 'paid') {
+    if (session.payment_status === "paid") {
       const clienteId = session.metadata?.userId;
-      
-      const paymentIntentId = typeof session.payment_intent === 'string' 
-        ? session.payment_intent 
-        : session.payment_intent?.id;
+      const paymentIntentId =
+        typeof session.payment_intent === "string"
+          ? session.payment_intent
+          : session.payment_intent?.id;
 
       if (clienteId && paymentIntentId) {
-        try {
-          const emailCliente = session.customer_details?.email || undefined;
-          const nombreCliente = session.customer_details?.name || 'Cliente';
+        const emailCliente = session.customer_details?.email || undefined;
+        const nombreCliente = session.customer_details?.name || "Cliente";
 
-          // 1. Enregistrer la facture (et le client s'il n'existe pas)
+        try {
+          // 1. Enregistrer la facture (ou récupérer l'existante si déjà enregistrée)
           const nuevaFactura = await crearFactura({
             clienteId,
             stripePaymentIntentId: paymentIntentId,
-            iva: 21.00,
+            iva: 21.0,
             email: emailCliente,
-            nombreCliente: nombreCliente
+            nombreCliente,
           });
 
           if (nuevaFactura && nuevaFactura.pk_factura) {
             facturaId = nuevaFactura.pk_factura;
+            esNuevaFactura = nuevaFactura.yaExistia !== true;
             pagoExitoso = true;
           } else {
             throw new Error("La función crearFactura no devolvió un ID válido.");
           }
         } catch (dbError: any) {
-          console.error("ERREUR SQL/DB [crearFactura]:", dbError.message || dbError);
-          errorMessage = `Error al registrar la factura en la base de datos: ${dbError.message || 'Desconocido'}`;
-        }
+          const isDuplicateKey =
+            dbError?.code === "23505" ||
+            String(dbError?.message || "").includes("facturas_stripe_payment_intent_id_key");
 
-        // 2. Envoyer l'e-mail de confirmation avec Brevo
-        if (pagoExitoso) {
-          try {
-            const emailCliente = session.customer_details?.email;
-            const nombreCliente = session.customer_details?.name || 'Cliente';
-            const total = (session.amount_total || 0) / 100;
-
-            if (emailCliente && facturaId) {
-              await enviarEmailFactura({
-                emailCliente,
-                nombreCliente,
-                facturaId,
-                total
-              });
-            }
-          } catch (emailError: any) {
-            console.error("ERREUR BREVO [enviarEmailFactura]:", emailError.message || emailError);
+          if (isDuplicateKey) {
+            // Repli sûr si crearFactura lève encore l'erreur 23505
+            pagoExitoso = true;
+          } else {
+            console.error("ERREUR SQL/DB [crearFactura]:", dbError?.message || dbError);
+            errorMessage = `Error al registrar la factura en la base de datos: ${
+              dbError?.message || "Desconocido"
+            }`;
           }
         }
 
+        // 2. Envoyer l'e-mail uniquement lors d'une nouvelle facture créée
+        if (pagoExitoso && esNuevaFactura && emailCliente && facturaId) {
+          try {
+            const total = (session.amount_total || 0) / 100;
+            await enviarEmailFactura({
+              emailCliente,
+              nombreCliente,
+              facturaId,
+              total,
+            });
+          } catch (emailError: any) {
+            console.error("ERREUR BREVO [enviarEmailFactura]:", emailError?.message || emailError);
+          }
+        }
       } else {
-        errorMessage = 'Faltan datos del cliente (userId) o del pago de Stripe.';
+        errorMessage = "Faltan datos del cliente (userId) o del pago de Stripe.";
       }
     } else {
-      errorMessage = 'El pago no se ha completado correctamente.';
+      errorMessage = "El pago no se ha completado correctamente.";
     }
   } catch (error: any) {
-    console.error('Erreur Stripe [retrieve session]:', error.message || error);
-    errorMessage = 'Hubo un error al verificar la sesión de pago con Stripe.';
+    console.error("Erreur Stripe [retrieve session]:", error?.message || error);
+    errorMessage = "Hubo un error al verificar la sesión de pago con Stripe.";
   }
 }
 ---
 
 <LayoutBase>
   <div class="container mx-auto px-4 py-16 max-w-xl text-center">
-    
     {pagoExitoso ? (
       <div class="bg-white p-8 rounded-lg shadow-md border border-gray-200">
         <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
@@ -97,19 +106,20 @@ if (!sessionId) {
           Muchas gracias por tu compra. Tu pedido se ha registrado correctamente en nuestro sistema y hemos enviado un correo de confirmación.
         </p>
 
-        <!-- Botones de Acción -->
         <div class="flex flex-col sm:flex-row gap-3 justify-center items-center">
           {facturaId && (
-            <a 
-              href={`/factura/${facturaId}`} 
+            <a
+              href={`/factura/${facturaId}`}
               target="_blank"
-              class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+              class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            >
               🖨️ Ver e Imprimir Factura
             </a>
           )}
-          <a 
-            href="/" 
-            class="w-full sm:w-auto inline-block bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors font-medium">
+          <a
+            href="/"
+            class="w-full sm:w-auto inline-block bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors font-medium"
+          >
             Volver al inicio
           </a>
         </div>
@@ -121,24 +131,21 @@ if (!sessionId) {
         </div>
         <h1 class="text-3xl font-bold mb-2 text-gray-900">Algo salió mal</h1>
         <p class="text-gray-600 mb-6">{errorMessage}</p>
-        <a 
-          href="/carrito" 
-          class="inline-block bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors font-medium">
+        <a
+          href="/carrito"
+          class="inline-block bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors font-medium"
+        >
           Volver al carrito
         </a>
       </div>
     )}
-
   </div>
 </LayoutBase>
 
-<!-- Script en el cliente para vaciar el localStorage de la cesta -->
 <script define:vars={{ pagoExitoso }}>
   if (pagoExitoso) {
     localStorage.removeItem("cesta");
     localStorage.removeItem("tienda_coches_carrito");
     window.dispatchEvent(new Event("cestaUpdated"));
-    console.log("Cesta vaciada con éxito tras el pago.");
   }
 </script>
-
